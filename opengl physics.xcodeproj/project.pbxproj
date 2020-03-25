@@ -7,21 +7,47 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		50C95DCF2426B17F00F14718 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 50C95DCE2426B17F00F14718 /* AppDelegate.m */; };
 		50C95DD12426B18000F14718 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 50C95DD02426B18000F14718 /* Assets.xcassets */; };
-		50C95DD42426B18000F14718 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 50C95DD22426B18000F14718 /* MainMenu.xib */; };
-		50C95DD72426B18000F14718 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 50C95DD62426B18000F14718 /* main.m */; };
+		50C95DDF2426B19D00F14718 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50C95DDE2426B19D00F14718 /* main.cpp */; };
+		50C95DE62426B1F800F14718 /* libglfw.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 50C95DE52426B1F800F14718 /* libglfw.3.dylib */; };
+		50C95DE72426B1F800F14718 /* libglfw.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 50C95DE52426B1F800F14718 /* libglfw.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		50FC7F652426B50E00E62AF9 /* glad.c in Sources */ = {isa = PBXBuildFile; fileRef = 50FC7F642426B50E00E62AF9 /* glad.c */; };
+		50FC7F672426BDA000E62AF9 /* shaders in Resources */ = {isa = PBXBuildFile; fileRef = 50FC7F662426BDA000E62AF9 /* shaders */; };
+		50FC7F692426BFB900E62AF9 /* bridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 50FC7F682426BFB900E62AF9 /* bridge.mm */; };
+		50FDBB402427A6BE00A3C1C0 /* loaders.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50FDBB3E2427A6BE00A3C1C0 /* loaders.cpp */; };
+		50FDBB422427A92A00A3C1C0 /* textures in Resources */ = {isa = PBXBuildFile; fileRef = 50FDBB412427A92A00A3C1C0 /* textures */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		50C95DE82426B1F800F14718 /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				50C95DE72426B1F800F14718 /* libglfw.3.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		50C95DCA2426B17F00F14718 /* opengl physics.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "opengl physics.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		50C95DCD2426B17F00F14718 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		50C95DCE2426B17F00F14718 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		50C95DD02426B18000F14718 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		50C95DD32426B18000F14718 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		50C95DD52426B18000F14718 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		50C95DD62426B18000F14718 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		50C95DD82426B18000F14718 /* opengl_physics.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = opengl_physics.entitlements; sourceTree = "<group>"; };
+		50C95DDE2426B19D00F14718 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		50C95DE02426B1C900F14718 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		50C95DE12426B1C900F14718 /* libs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libs; sourceTree = "<group>"; };
+		50C95DE52426B1F800F14718 /* libglfw.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.dylib; path = "opengl physics/libs/libglfw.3.dylib"; sourceTree = "<group>"; };
+		50FC7F642426B50E00E62AF9 /* glad.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = glad.c; path = "opengl physics/libs/glad.c"; sourceTree = "<group>"; };
+		50FC7F662426BDA000E62AF9 /* shaders */ = {isa = PBXFileReference; lastKnownFileType = folder; path = shaders; sourceTree = "<group>"; };
+		50FC7F682426BFB900E62AF9 /* bridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = bridge.mm; sourceTree = "<group>"; };
+		50FC7F6A2426BFCE00E62AF9 /* bridge.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = bridge.hpp; sourceTree = "<group>"; };
+		50FDBB3E2427A6BE00A3C1C0 /* loaders.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = loaders.cpp; sourceTree = "<group>"; };
+		50FDBB3F2427A6BE00A3C1C0 /* loaders.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = loaders.hpp; sourceTree = "<group>"; };
+		50FDBB412427A92A00A3C1C0 /* textures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = textures; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,6 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				50C95DE62426B1F800F14718 /* libglfw.3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -38,8 +65,10 @@
 		50C95DC12426B17F00F14718 = {
 			isa = PBXGroup;
 			children = (
+				50FC7F642426B50E00E62AF9 /* glad.c */,
 				50C95DCC2426B17F00F14718 /* opengl physics */,
 				50C95DCB2426B17F00F14718 /* Products */,
+				50C95DE42426B1F800F14718 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -54,15 +83,28 @@
 		50C95DCC2426B17F00F14718 /* opengl physics */ = {
 			isa = PBXGroup;
 			children = (
-				50C95DCD2426B17F00F14718 /* AppDelegate.h */,
-				50C95DCE2426B17F00F14718 /* AppDelegate.m */,
 				50C95DD02426B18000F14718 /* Assets.xcassets */,
-				50C95DD22426B18000F14718 /* MainMenu.xib */,
 				50C95DD52426B18000F14718 /* Info.plist */,
-				50C95DD62426B18000F14718 /* main.m */,
 				50C95DD82426B18000F14718 /* opengl_physics.entitlements */,
+				50FC7F682426BFB900E62AF9 /* bridge.mm */,
+				50FC7F6A2426BFCE00E62AF9 /* bridge.hpp */,
+				50C95DDE2426B19D00F14718 /* main.cpp */,
+				50FDBB3E2427A6BE00A3C1C0 /* loaders.cpp */,
+				50FDBB3F2427A6BE00A3C1C0 /* loaders.hpp */,
+				50FDBB412427A92A00A3C1C0 /* textures */,
+				50FC7F662426BDA000E62AF9 /* shaders */,
+				50C95DE02426B1C900F14718 /* include */,
+				50C95DE12426B1C900F14718 /* libs */,
 			);
 			path = "opengl physics";
+			sourceTree = "<group>";
+		};
+		50C95DE42426B1F800F14718 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				50C95DE52426B1F800F14718 /* libglfw.3.dylib */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -75,6 +117,7 @@
 				50C95DC62426B17F00F14718 /* Sources */,
 				50C95DC72426B17F00F14718 /* Frameworks */,
 				50C95DC82426B17F00F14718 /* Resources */,
+				50C95DE82426B1F800F14718 /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -123,7 +166,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				50C95DD12426B18000F14718 /* Assets.xcassets in Resources */,
-				50C95DD42426B18000F14718 /* MainMenu.xib in Resources */,
+				50FC7F672426BDA000E62AF9 /* shaders in Resources */,
+				50FDBB422427A92A00A3C1C0 /* textures in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -134,23 +178,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				50C95DD72426B18000F14718 /* main.m in Sources */,
-				50C95DCF2426B17F00F14718 /* AppDelegate.m in Sources */,
+				50FC7F692426BFB900E62AF9 /* bridge.mm in Sources */,
+				50FDBB402427A6BE00A3C1C0 /* loaders.cpp in Sources */,
+				50C95DDF2426B19D00F14718 /* main.cpp in Sources */,
+				50FC7F652426B50E00E62AF9 /* glad.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXVariantGroup section */
-		50C95DD22426B18000F14718 /* MainMenu.xib */ = {
-			isa = PBXVariantGroup;
-			children = (
-				50C95DD32426B18000F14718 /* Base */,
-			);
-			name = MainMenu.xib;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		50C95DD92426B18000F14718 /* Debug */ = {
@@ -269,10 +304,15 @@
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl physics/include\"";
 				INFOPLIST_FILE = "opengl physics/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/opengl\\ physics/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "nothingness.opengl-physics";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -286,10 +326,15 @@
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl physics/include\"";
 				INFOPLIST_FILE = "opengl physics/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/opengl\\ physics/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "nothingness.opengl-physics";
 				PRODUCT_NAME = "$(TARGET_NAME)";
