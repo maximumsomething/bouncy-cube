@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 #include <iostream>
 #include <string>
@@ -11,6 +12,7 @@
 
 #include "bridge.hpp"
 #include "loaders.hpp"
+#include "voxels.hpp"
 
 
 struct {
@@ -127,13 +129,15 @@ class HelloTriangle {
 	GLuint floorTexture;
 	
 	glm::vec3 cameraUp = glm::vec3(0, 1, 0);
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-	glm::vec3 cameraDirection = -cameraPos;
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
+	glm::vec3 cameraDirection = glm::normalize(-cameraPos);
+	
+	std::unique_ptr<VoxelRenderer> voxelRenderer = getVoxelRenderer();
 	
 public:
 	HelloTriangle() {
 		
-		float vertices[] = {
+		/*float vertices[] = {
 			// positions         // colors
 			 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
 			-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
@@ -154,7 +158,7 @@ public:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (float*)(3* sizeof(float)));
 		glEnableVertexAttribArray(1);
 		
-		floorTexture = loadTexture("wall.jpg");
+		floorTexture = loadTexture("wall.jpg");*/
 		
 	}
 	
@@ -164,7 +168,7 @@ public:
 		auto currentFrameTime = std::chrono::steady_clock::now();
 		float deltaTime = std::chrono::duration<float>(currentFrameTime - lastFrameTime).count();
 		
-		float moveAmount = deltaTime*2;
+		float moveAmount = deltaTime*5;
 		
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 			cameraPos += moveAmount * cameraDirection;
@@ -174,26 +178,34 @@ public:
 			cameraPos -= glm::normalize(glm::cross(cameraDirection, cameraUp)) * moveAmount;
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 			cameraPos += glm::normalize(glm::cross(cameraDirection, cameraUp)) * moveAmount;
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+			cameraPos += cameraUp * moveAmount;
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+			cameraPos -= cameraUp * moveAmount;
 		
-		float yaw = atan2(cameraDirection.z, cameraDirection.x);
-		float pitch = asin(cameraDirection.y);
 		
+		float dyaw = 0, dpitch = 0;
 		
-		//std::cout << "cameraDirection: x:" << cameraDirection.x << " y:" << cameraDirection.y //<< " z:" << cameraDirection.z <<
-		//" yaw:" << yaw << " pitch:" << pitch << std::endl;
+		//std::cout << "cameraDirection: x:" << cameraDirection.x << " y:" << cameraDirection.y << " z:" << cameraDirection.z <<
+		//" yaw:" << dyaw << " pitch:" << dpitch << std::endl;
 		
 		float turnAmount = deltaTime * 2;
 		
 		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-			pitch += turnAmount;
+			dpitch += turnAmount;
 		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-			pitch -= turnAmount;
+			dpitch -= turnAmount;
 		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-			yaw -= turnAmount;
+			dyaw -= turnAmount;
 		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-			yaw += turnAmount;
+			dyaw += turnAmount;
 		
-		cameraDirection = glm::vec3(cos(yaw), sin(pitch), sin(yaw));
+		float oldPitch = asin(cameraDirection.y);
+		
+		cameraDirection = glm::rotate(cameraDirection, dyaw, -cameraUp);
+		// Prevent the camera from flipping backwards
+		if (abs(oldPitch + dpitch) <= M_PI_2 - 0.01) cameraDirection = glm::rotate(cameraDirection, dpitch, glm::cross(cameraDirection, cameraUp));
+		
 		
 		lastFrameTime = currentFrameTime;
 	}
@@ -211,12 +223,13 @@ public:
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::rotate(model, glm::radians(00.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(60.0f), (float) windowData.width / windowData.height, 0.1f, 100.0f);
+		projection = glm::perspective(glm::radians(60.0f), (float) windowData.width / windowData.height, 0.1f, 1000000.0f);
 		
 		
 		skybox.render(view, projection);
+		voxelRenderer->render(view, projection);
 		
-		
+		/*
 		glUseProgram(shaderProgram);
 		
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
@@ -227,7 +240,7 @@ public:
 		glBindTexture(GL_TEXTURE_2D, floorTexture);
 		
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, 3);*/
 	}
 };
 
@@ -267,6 +280,9 @@ int main(int argc, char** argv) {
 	
 	
 	HelloTriangle renderer;
+	
+	
+	std::cout << glGetString(GL_VERSION) << std::endl;
 	
 	// main loop
 	while(!glfwWindowShouldClose(window))

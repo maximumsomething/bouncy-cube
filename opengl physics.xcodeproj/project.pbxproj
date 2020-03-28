@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		50C49C5C242BCD7100BEE377 /* voxels.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50C49C5A242BCD7100BEE377 /* voxels.cpp */; };
 		50C95DD12426B18000F14718 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 50C95DD02426B18000F14718 /* Assets.xcassets */; };
 		50C95DDF2426B19D00F14718 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50C95DDE2426B19D00F14718 /* main.cpp */; };
 		50C95DE62426B1F800F14718 /* libglfw.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 50C95DE52426B1F800F14718 /* libglfw.3.dylib */; };
@@ -33,6 +34,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		50C49C5A242BCD7100BEE377 /* voxels.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = voxels.cpp; sourceTree = "<group>"; };
+		50C49C5B242BCD7100BEE377 /* voxels.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = voxels.hpp; sourceTree = "<group>"; };
+		50C49C5D242BD44300BEE377 /* arrayND.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = arrayND.hpp; sourceTree = "<group>"; };
 		50C95DCA2426B17F00F14718 /* opengl physics.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "opengl physics.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		50C95DD02426B18000F14718 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		50C95DD52426B18000F14718 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -89,6 +93,9 @@
 				50FC7F682426BFB900E62AF9 /* bridge.mm */,
 				50FC7F6A2426BFCE00E62AF9 /* bridge.hpp */,
 				50C95DDE2426B19D00F14718 /* main.cpp */,
+				50C49C5A242BCD7100BEE377 /* voxels.cpp */,
+				50C49C5B242BCD7100BEE377 /* voxels.hpp */,
+				50C49C5D242BD44300BEE377 /* arrayND.hpp */,
 				50FDBB3E2427A6BE00A3C1C0 /* loaders.cpp */,
 				50FDBB3F2427A6BE00A3C1C0 /* loaders.hpp */,
 				50FDBB412427A92A00A3C1C0 /* textures */,
@@ -182,6 +189,7 @@
 				50FDBB402427A6BE00A3C1C0 /* loaders.cpp in Sources */,
 				50C95DDF2426B19D00F14718 /* main.cpp in Sources */,
 				50FC7F652426B50E00E62AF9 /* glad.c in Sources */,
+				50C49C5C242BCD7100BEE377 /* voxels.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +309,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -323,6 +332,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = NO;
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;

@@ -2,12 +2,14 @@
 
 #include <string>
 #include <vector>
+#include <glad/glad.h>
 
 
-unsigned int loadTexture(const char* name);
-unsigned int loadCubemap(const std::vector<std::string>& faces);
+GLuint loadTexture(const char* name);
+GLuint loadCubemap(const std::vector<std::string>& faces);
 
-
-unsigned int loadShaders(const char* vert, const char* frag);
+GLuint loadShader(const char* name, GLenum type);
+GLuint linkShaders(std::vector<GLuint> shaders);
+GLuint loadShaders(const char* vert, const char* frag);
 
 

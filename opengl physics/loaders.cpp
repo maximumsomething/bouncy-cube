@@ -21,9 +21,9 @@ bool loadGLImage(const char* name, GLenum target) {
 	return (bool) data;
 }
 
-unsigned int loadTexture(const char* name) {
+GLuint loadTexture(const char* name) {
 	
-	unsigned int texture;
+	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	// set the texture wrapping/filtering options (on the currently bound texture object)
@@ -38,8 +38,8 @@ unsigned int loadTexture(const char* name) {
 	return texture;
 }
 
-unsigned int loadCubemap(const std::vector<std::string>& faces) {
-    unsigned int textureID;
+GLuint loadCubemap(const std::vector<std::string>& faces) {
+    GLuint textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
 
@@ -91,14 +91,12 @@ GLuint loadShader(const char* name, GLenum type) {
 	return shader;
 }
 
-unsigned int loadShaders(const char* vert, const char* frag) {
-	
-	GLuint vertexShader = loadShader(vert, GL_VERTEX_SHADER);
-	GLuint fragmentShader = loadShader(frag, GL_FRAGMENT_SHADER);
+GLuint linkShaders(std::vector<GLuint> shaders) {
 	
 	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
+	for (GLuint i : shaders) {
+		glAttachShader(shaderProgram, i);
+	}
 	glLinkProgram(shaderProgram);
 	
 	int success;
@@ -111,8 +109,17 @@ unsigned int loadShaders(const char* vert, const char* frag) {
 		exit(1);
 	}
 	
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	for (GLuint i : shaders) {
+		glDeleteShader(i);
+	}
 	
 	return shaderProgram;
+}
+
+GLuint loadShaders(const char* vert, const char* frag) {
+	
+	GLuint vertexShader = loadShader(vert, GL_VERTEX_SHADER);
+	GLuint fragmentShader = loadShader(frag, GL_FRAGMENT_SHADER);
+	
+	return linkShaders({vertexShader, fragmentShader});
 }
