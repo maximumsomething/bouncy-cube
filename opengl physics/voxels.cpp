@@ -161,8 +161,8 @@ arrayND<bool, 3> genSphere(unsigned int radius) {
 	for (int i = 0; i < sphere.total(); ++i) {
 		auto coord = sphere.ind2coord(i);
 		sphere.linear()[i] =
-		pow((float) coord[0] - radius, 2) + pow((float) coord[1] - radius, 2) + pow((float) coord[2] - radius, 2)
-		<= pow(radius, 2);
+		pow((float) coord[0] - radius + 0.5, 2) + pow((float) coord[1] - radius + 0.5, 2) + pow((float) coord[2] - radius + 0.5, 2)
+		<= pow(radius + 0.1, 2);
 		
 	}
 	
@@ -177,6 +177,7 @@ class VoxelRendererImpl : public VoxelRenderer {
 public:
 	
 	GLuint shaderProgram;
+	GLuint cubeTexture = loadTexture("rubber.jpg");
 	
 	VoxelStorage toRender{genSphere(RADIUS)};
 	
@@ -216,7 +217,7 @@ public:
 	void render(glm::mat4 view, glm::mat4 projection) override {
 		
 		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(-RADIUS, -RADIUS, -RADIUS));
+		model = glm::translate(model, glm::vec3(-RADIUS, -RADIUS, -RADIUS*2));
 		
 		auto totalTransform = projection * view * model;
 		
@@ -228,10 +229,18 @@ public:
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(totalTransform));
 		
 		glBindVertexArray(VAO);
-		//glPointSize(10);
-		//glDrawArrays(GL_POINTS, 0, toRender.verts.size());
+		
+		glEnable(GL_DEPTH_TEST);
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, cubeTexture);
+		
+		//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		
 		glDrawElements(GL_POINTS, toRender.edgeIndices.size(), GL_UNSIGNED_INT, nullptr);
+		//glDrawElements(GL_POINTS, 1, GL_UNSIGNED_INT, nullptr);
+		
+		//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	}
 };
 

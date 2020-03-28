@@ -117,6 +117,8 @@ public:
 		glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
 		
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+		
+		glDepthMask(GL_TRUE);
 	}
 };
 
@@ -129,7 +131,7 @@ class HelloTriangle {
 	GLuint floorTexture;
 	
 	glm::vec3 cameraUp = glm::vec3(0, 1, 0);
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f);
 	glm::vec3 cameraDirection = glm::normalize(-cameraPos);
 	
 	std::unique_ptr<VoxelRenderer> voxelRenderer = getVoxelRenderer();
@@ -171,9 +173,9 @@ public:
 		float moveAmount = deltaTime*5;
 		
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			cameraPos += moveAmount * cameraDirection;
+			cameraPos += moveAmount * glm::normalize(glm::vec3(cameraDirection.x, 0, cameraDirection.z));
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			cameraPos -= moveAmount * cameraDirection;
+			cameraPos -= moveAmount * glm::normalize(glm::vec3(cameraDirection.x, 0, cameraDirection.z));
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 			cameraPos -= glm::normalize(glm::cross(cameraDirection, cameraUp)) * moveAmount;
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
@@ -212,7 +214,7 @@ public:
 	
 	void render() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		
 		glm::mat4 view = glm::lookAt(cameraPos,
@@ -223,7 +225,7 @@ public:
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::rotate(model, glm::radians(00.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(60.0f), (float) windowData.width / windowData.height, 0.1f, 1000000.0f);
+		projection = glm::perspective(glm::radians(60.0f), (float) windowData.width / windowData.height, 0.1f, 1000.0f);
 		
 		
 		skybox.render(view, projection);

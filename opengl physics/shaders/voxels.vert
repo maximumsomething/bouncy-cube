@@ -4,7 +4,7 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in ivec3 neighborsM;
 layout (location = 2) in ivec3 neighborsP;
 
-out vec3 cubeColor;
+//out vec3 cubeColor;
 
 uniform mat4 transform;
 
@@ -24,5 +24,5 @@ void main() {
 	if (neighborsP.z == -1) exposedFaces |= (1 << 5);
 	
 	//cubeColor = vec3(float(gl_VertexID), .5, 0.5);
-	cubeColor = vec3(.5, .5, .5);
+	//cubeColor = vec3(.5, .5, .5);
 }

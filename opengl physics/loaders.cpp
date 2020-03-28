@@ -11,8 +11,10 @@ bool loadGLImage(const char* name, GLenum target) {
 	int width, height, nrChannels;
 	unsigned char *data = stbi_load((getResourcesPath() + "/textures/" + name).c_str(), &width, &height, &nrChannels, 0);
 	if (data) {
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		glTexImage2D(target, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 	}
+	
 	else {
 		std::cout << "Failed to load texture " << name << std::endl;
 	}

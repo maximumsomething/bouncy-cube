@@ -8,8 +8,9 @@ layout (triangle_strip, max_vertices = 24) out;
 
 in int exposedFaces[];
 
-in vec3 cubeColor[];
-out vec3 vertColor;
+//in vec3 cubeColor[];
+//out vec3 vertColor;
+out vec2 texCoord;
 
 uniform mat4 transform;
 
@@ -17,7 +18,11 @@ vec4 makeCorner(vec3 directions) {
 	return gl_in[0].gl_Position + transform * vec4(directions * 0.5, 0.0);
 }
 void emitFace(vec4[4] corners) {
+	vec2 texCoords[4] = vec2[](vec2(0, 0), vec2(0, 1), vec2(1, 0), vec2(1, 1));
+	
 	for (int i = 0; i < 4; ++i) {
+		texCoord = texCoords[i];
+		//vertColor = vec3(texCoords[i], 0);
 		gl_Position = corners[i];
 		EmitVertex();
 	}
@@ -26,10 +31,11 @@ void emitFace(vec4[4] corners) {
 
 bool bit(int field, int bit) {
 	return (field & (1 << bit)) != 0;
+	return true;
 }
 
 void main() {
-	vertColor = cubeColor[0];
+	//vertColor = cubeColor[0];
 	
 	// m=minus p=plus
 	vec4 cornermmm = makeCorner(vec3(-1, -1, -1));
