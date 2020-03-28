@@ -8,6 +8,9 @@ layout (triangle_strip, max_vertices = 24) out;
 
 in int exposedFaces[];
 
+in vec3 cubeColor[];
+out vec3 vertColor;
+
 uniform mat4 transform;
 
 vec4 makeCorner(vec3 directions) {
@@ -22,11 +25,11 @@ void emitFace(vec4[4] corners) {
 }
 
 bool bit(int field, int bit) {
-	//return (field | (1 << bit)) != 0;
-	return true;
+	return (field & (1 << bit)) != 0;
 }
 
 void main() {
+	vertColor = cubeColor[0];
 	
 	// m=minus p=plus
 	vec4 cornermmm = makeCorner(vec3(-1, -1, -1));

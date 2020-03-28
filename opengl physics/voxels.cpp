@@ -205,8 +205,10 @@ public:
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VoxelStorage::Vertex), 0);
 		glEnableVertexAttribArray(0);
 		
-		glVertexAttribIPointer(0, 6, GL_UNSIGNED_INT, sizeof(VoxelStorage::Vertex), (void *) offsetof(VoxelStorage::Vertex, neighbors));
+		glVertexAttribIPointer(1, 3, GL_INT, sizeof(VoxelStorage::Vertex), (void *) offsetof(VoxelStorage::Vertex, neighbors));
 		glEnableVertexAttribArray(1);
+		glVertexAttribIPointer(2, 3, GL_INT, sizeof(VoxelStorage::Vertex), (void *) offsetof(VoxelStorage::Vertex, neighbors[3]));
+		glEnableVertexAttribArray(2);
 		
 		
 	}
