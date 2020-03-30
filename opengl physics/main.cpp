@@ -172,6 +172,9 @@ public:
 		
 		float moveAmount = deltaTime*5;
 		
+		if (glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS)
+			moveAmount *= 5;
+		
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 			cameraPos += moveAmount * glm::normalize(glm::vec3(cameraDirection.x, 0, cameraDirection.z));
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -225,7 +228,7 @@ public:
 		glm::mat4 model = glm::mat4(1.0f);
 		model = glm::rotate(model, glm::radians(00.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		glm::mat4 projection;
-		projection = glm::perspective(glm::radians(60.0f), (float) windowData.width / windowData.height, 0.1f, 1000.0f);
+		projection = glm::perspective(glm::radians(60.0f), (float) windowData.width / windowData.height, 0.1f, 10000.0f);
 		
 		
 		skybox.render(view, projection);
@@ -245,7 +248,6 @@ public:
 		glDrawArrays(GL_TRIANGLES, 0, 3);*/
 	}
 };
-
 
 int main(int argc, char** argv) {
 	

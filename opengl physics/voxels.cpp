@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <unistd.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -15,9 +16,8 @@ public:
 	arrayND<bool, 3> storage;
 	
 	// Every vertex has index of up to 6 connected vertices
-	struct Vertex {
-		float x, y, z;
-		Vertex(float x, float y, float z) : x(x), y(y), z(z) {
+	struct VertData {
+		VertData() {
 			for (auto& i : neighbors) {
 				i = -1;
 			}
@@ -26,60 +26,22 @@ public:
 		// Order: -x, -y, -z, +x, +y, +z
 		int32_t neighbors[6];
 	};
-	std::vector<Vertex> verts;
+	std::vector<glm::vec3> vertsPos;
+	std::vector<VertData> vertsData;
 	std::vector<uint32_t> edgeIndices;
 	
 	VoxelStorage(arrayND<bool, 3> storage) : storage(storage) {
 		
-		verts = getVerts();
+		setVerts();
 		edgeIndices = getEBO();
 		
 	}
 	
 	// Every vert is guaranteed to be either a positive x, y, or z in front of the previous vertex
 private:
-	std::vector<Vertex> getVerts() {
-		std::vector<Vertex> verts;
-		
-		// Version that returns corners between voxels
-		/*auto indexMapSize = storage.sizes;
-		indexMapSize[0] +=1; indexMapSize[1] += 1; indexMapSize[2] += 1;
-		// Array of all potential vertices, and where they are in the verts array
-		arrayND<int32_t, 3> indexMap(indexMapSize, -1);
-		
-		// iterate through the corners
-		for (unsigned int z = 0; z <= storage.sizes[2]; ++z)
-		for (unsigned int y = 0; y <= storage.sizes[1]; ++y)
-		for (unsigned int x = 0; x <= storage.sizes[0]; ++x) {
-			std::array<size_t, 3> coord{x, y, z};
-			
-			// The corner at (x, y, z) is at the middle of the cube of 8 voxels, with the corners (x-1, y-1, z-1) and (x, y, z)
-			
-			// If any neighboring voxels exist, this vertex exists.
-			for (int i = 0; i < 8; ++i) {
-				if (storage[x - i % 2][y - (i / 2) % 2][z - (i / 4) % 2]) {
-					
-					verts.push_back(Vertex(x, y, z));
-					indexMap[x][y][z] = verts.size() - 1;
-					
-					// Get the neighbors above, but not below
-					for (int j = 0; j < 3; ++j) {
-						if (coord[j] > 0) {
-
-							auto neighborCoord = coord;
-							neighborCoord[j] -= 1;
-							if (indexMap[neighborCoord] != -1) {
-								verts.back().neighbors[j] = indexMap[neighborCoord];
-								verts[indexMap[neighborCoord]].neighbors[j + 3] = verts.size() - 1;
-							}
-						}
-					}
-					break;
-				}
-			}
-		}*/
-		
-		// Version that returns the voxels themselves
+	void setVerts() {
+		vertsPos.clear();
+		vertsData.clear();
 		
 		// Contains the indices of the vertices in toReturn
 		arrayND<int32_t, 3> indexMap(storage.sizes, -1);
@@ -87,9 +49,10 @@ private:
 		for (int i = 0; i < storage.total(); ++i) {
 			if (storage.linear()[i]) {
 				auto coord = storage.ind2coord(i);
-				verts.push_back(Vertex(coord[0], coord[1], coord[2]));
+				vertsPos.push_back(glm::vec3(coord[0], coord[1], coord[2]));
+				vertsData.emplace_back();
 				
-				indexMap.linear()[i] = verts.size() - 1;
+				indexMap.linear()[i] = vertsData.size() - 1;
 				
 				// Get the neighbors above, but not below
 				for (int j = 0; j < 3; ++j) {
@@ -99,21 +62,19 @@ private:
 						neighborCoord[j] -= 1;
 						if (storage[neighborCoord]) {
 							assert(indexMap[neighborCoord] >= 0);
-							verts.back().neighbors[j] = indexMap[neighborCoord];
-							verts[indexMap[neighborCoord]].neighbors[j + 3] = verts.size() - 1;
+							vertsData.back().neighbors[j] = indexMap[neighborCoord];
+							vertsData[indexMap[neighborCoord]].neighbors[j + 3] = vertsData.size() - 1;
 						}
 					}
 				}
 			}
 		}
-		
-		return verts;
 	}
 	
 	std::vector<uint32_t> getEBO() {
 		std::vector<uint32_t> EBO;
-		for (uint32_t i = 0; i < verts.size(); ++i) {
-			for (auto j : verts[i].neighbors) {
+		for (uint32_t i = 0; i < vertsData.size(); ++i) {
+			for (auto j : vertsData[i].neighbors) {
 				if (j == -1) {
 					EBO.push_back(i);
 					break;
@@ -122,36 +83,6 @@ private:
 		}
 		return EBO;
 	}
-	
-	// Version for if the verts were voxel corners
-	/*
-	std::vector<uint32_t> getEBOData(const std::vector<Vertex>& verts) {
-		std::vector<uint32_t> EBO;
-		
-		// iterate through the voxels, with an extra fake voxel on the end
-		for (unsigned int z = 0; z <= storage.sizes[2]; ++z)
-		for (unsigned int y = 0; y <= storage.sizes[1]; ++y)
-		for (unsigned int x = 0; x <= storage.sizes[0]; ++x) {
-			std::array<size_t, 3> coord{x, y, z};
-			
-			// Get the neighbors above, but not below
-			for (int i = 0; i < 3; ++i) {
-				auto neighborCoord = coord;
-				neighborCoord[i] -= 1;
-				
-				bool neighbor = storage.inBounds(neighborCoord) && storage[neighborCoord];
-				bool me = storage.inBounds({x, y, z}) && storage[x][y][z];
-				
-				if (me ^ neighbor) {
-					// Neighbor is different, make a face
-					
-					
-				}
-				
-			}
-			
-		}
-	}*/
 };
 
 arrayND<bool, 3> genSphere(unsigned int radius) {
@@ -172,49 +103,139 @@ arrayND<bool, 3> genSphere(unsigned int radius) {
 
 constexpr int RADIUS = 10;
 
+const GLchar * physOutputs[] = { "outPos", "outVel" };
+
 // Renders everything
 class VoxelRendererImpl : public VoxelRenderer {
 public:
 	
-	GLuint shaderProgram;
+	GLuint renderShader, physicsShader;
 	GLuint cubeTexture = loadTexture("rubber.jpg");
+	//GLuint cubeTexture = loadTexture("astroturf-2.jpeg");
 	
 	VoxelStorage toRender{genSphere(RADIUS)};
 	
-	GLuint VAO, VBO, EBO;
+	GLuint renderVAO, physVAO, posVBO1, posVBO2, velVBO1, velVBO2, dataVBO, EBO, posBufTex, velBufTex;
+	
 	
 	VoxelRendererImpl() :
-	shaderProgram(linkShaders({
+	renderShader(linkShaders({
 		loadShader("voxels.vert", GL_VERTEX_SHADER),
 		loadShader("voxels.frag", GL_FRAGMENT_SHADER),
 		loadShader("voxels.geom", GL_GEOMETRY_SHADER)
+	})),
+	physicsShader(linkShaders({
+		loadShader("sim.vert", GL_VERTEX_SHADER)}, [] (GLuint toBeLinked) {
+		glTransformFeedbackVaryings(toBeLinked, sizeof(physOutputs) / sizeof(physOutputs[0]), physOutputs, GL_SEPARATE_ATTRIBS);
 	})) {
 		
-		glGenVertexArrays(1, &VAO);
-		glBindVertexArray(VAO);
+		glGenVertexArrays(1, &renderVAO);
+		glBindVertexArray(renderVAO);
 		
-		glGenBuffers(1, &VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	
-		glBufferData(GL_ARRAY_BUFFER, toRender.verts.size() * sizeof(VoxelStorage::Vertex), toRender.verts.data(), GL_STATIC_DRAW);
+		// Gen all pos and velocity VBOs
+		glGenBuffers(4, &posVBO1);
+		
+		// Set the initial positions
+		glBindBuffer(GL_ARRAY_BUFFER, posVBO1);
+		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), toRender.vertsPos.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+		glEnableVertexAttribArray(0);
+		
+		// Set the initial velocities to 0
+		glBindBuffer(GL_ARRAY_BUFFER, velVBO1);
+		void* blankData = calloc(toRender.vertsPos.size(), sizeof(glm::vec3));
+		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), blankData, GL_DYNAMIC_COPY);
+		free(blankData);
+		
+		glGenBuffers(1, &dataVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
+		glBufferData(GL_ARRAY_BUFFER, toRender.vertsData.size() * sizeof(VoxelStorage::VertData), toRender.vertsData.data(), GL_STATIC_DRAW);
+		setVertDataAttrs(renderShader);
+		
 		
 		glGenBuffers(1, &EBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, toRender.edgeIndices.size() * sizeof(uint32_t), toRender.edgeIndices.data(), GL_STATIC_DRAW);
 		
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VoxelStorage::Vertex), 0);
+		// Physics renderer
+		
+		glGenVertexArrays(1, &physVAO);
+		glBindVertexArray(physVAO);
+		glUseProgram(physicsShader);
 		glEnableVertexAttribArray(0);
-		
-		glVertexAttribIPointer(1, 3, GL_INT, sizeof(VoxelStorage::Vertex), (void *) offsetof(VoxelStorage::Vertex, neighbors));
 		glEnableVertexAttribArray(1);
-		glVertexAttribIPointer(2, 3, GL_INT, sizeof(VoxelStorage::Vertex), (void *) offsetof(VoxelStorage::Vertex, neighbors[3]));
-		glEnableVertexAttribArray(2);
 		
+		setVertDataAttrs(physicsShader);
+		glUniform1i(glGetUniformLocation(physicsShader, "allVertsPos"), 0);
+		glUniform1i(glGetUniformLocation(physicsShader, "allVertsVel"), 1);
 		
+		glGenTextures(2, &posBufTex);
+	}
+	
+	void setVertDataAttrs(GLuint shader) {
+		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
+		glUseProgram(shader);
+		
+		GLint neighborsM = glGetAttribLocation(shader, "neighborsM");
+		glVertexAttribIPointer(neighborsM, 3, GL_INT, sizeof(VoxelStorage::VertData), 0);
+		glEnableVertexAttribArray(neighborsM);
+		GLint neighborsP = glGetAttribLocation(shader, "neighborsP");
+		glVertexAttribIPointer(neighborsP, 3, GL_INT, sizeof(VoxelStorage::VertData), (void *) offsetof(VoxelStorage::VertData, neighbors[3]));
+		glEnableVertexAttribArray(neighborsP);
+		glCheckError();
+	}
+	
+	void physicsStep(GLuint inPosVBO, GLuint inVelVBO, GLuint outPosVBO, GLuint outVelVBO) {
+		
+		// Clear the out buffers
+		glBindBuffer(GL_ARRAY_BUFFER, outPosVBO);
+		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), nullptr, GL_DYNAMIC_COPY);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, outVelVBO);
+		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), nullptr, GL_DYNAMIC_COPY);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, inPosVBO);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+		glBindBuffer(GL_ARRAY_BUFFER, inVelVBO);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
+		
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outPosVBO);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, outVelVBO);
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_BUFFER, posBufTex);
+		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, inPosVBO);
+		
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_BUFFER, velBufTex);
+		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, inVelVBO);
+		
+		glBeginTransformFeedback(GL_POINTS);
+		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
+		glEndTransformFeedback();
+		glFlush();
+	}
+	
+	void doPhysics() {
+		/*static int count = 0;
+		++count;
+		if (count % 60 != 0) return;*/
+		
+		glUseProgram(physicsShader);
+		glBindVertexArray(physVAO);
+		glEnable(GL_RASTERIZER_DISCARD);
+		
+		physicsStep(posVBO1, velVBO1, posVBO2, velVBO2);
+		physicsStep(posVBO2, velVBO2, posVBO1, velVBO1);
+		glCheckError();
+		
+		glDisable(GL_RASTERIZER_DISCARD);
 	}
 	
 	void render(glm::mat4 view, glm::mat4 projection) override {
+		
+		doPhysics();
 		
 		glm::mat4 model(1.0f);
 		model = glm::translate(model, glm::vec3(-RADIUS, -RADIUS, -RADIUS*2));
@@ -225,10 +246,10 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		glUseProgram(shaderProgram);
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(totalTransform));
+		glUseProgram(renderShader);
+		glUniformMatrix4fv(glGetUniformLocation(renderShader, "transform"), 1, GL_FALSE, glm::value_ptr(totalTransform));
 		
-		glBindVertexArray(VAO);
+		glBindVertexArray(renderVAO);
 		
 		glEnable(GL_DEPTH_TEST);
 		
@@ -237,10 +258,15 @@ public:
 		
 		//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 		
-		glDrawElements(GL_POINTS, toRender.edgeIndices.size(), GL_UNSIGNED_INT, nullptr);
-		//glDrawElements(GL_POINTS, 1, GL_UNSIGNED_INT, nullptr);
+		// Draw just the outside voxels
+		//glDrawElements(GL_POINTS, toRender.edgeIndices.size(), GL_UNSIGNED_INT, nullptr);
+		
+		// Draw everything
+		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
 		
 		//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		
+		//usleep(500000);
 	}
 };
 
