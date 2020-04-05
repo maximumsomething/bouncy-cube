@@ -6,7 +6,7 @@ layout (location = 1) in vec3 turn;
 layout (location = 2) in ivec3 neighborsM;
 layout (location = 3) in ivec3 neighborsP;
 
-//out vec3 cubeColor;
+out vec4 specialColor;
 
 uniform mat4 transform;
 
@@ -30,8 +30,9 @@ void main() {
 	if (neighborsP.y == -1) exposedFaces |= (1 << 4);
 	if (neighborsP.z == -1) exposedFaces |= (1 << 5);
 	
-	totalTransform = mat4(rotMatFromAxisAngle(turn)) * transform;
+	totalTransform = transform * mat4(rotMatFromAxisAngle(turn));
 	
-	//cubeColor = vec3(float(gl_VertexID), .5, 0.5);
-	//cubeColor = vec3(.5, .5, .5);
+	//specialColor = vec3(float(gl_VertexID), .5, 0.5);
+	if (gl_VertexID > 4261) specialColor = vec4(1, 0, 0, .5);
+	else specialColor = vec4(0, 0, 0, 0);
 }

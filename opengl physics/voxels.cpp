@@ -102,8 +102,8 @@ arrayND<bool, 3> genSphere(unsigned int radius) {
 
 
 constexpr int RADIUS = 10;
-constexpr int PHYS_STEPS_PER_FRAME = 20;
-constexpr int SLOWDOWN_FACTOR = 10;
+constexpr int PHYS_STEPS_PER_FRAME = 6;
+constexpr int SLOWDOWN_FACTOR = 3;
 
 
 const GLchar * physOutputs[] = { "outPos", "outTurn", "outVel", "outAngVel" };
@@ -152,7 +152,8 @@ public:
 		for (unsigned i = 0; i < toRender.vertsPos.size(); ++i) {
 			initPhysData[i].pos = toRender.vertsPos[i];
 			//if (i < 10) initPhysData[i].vel = glm::vec3(1, 1, 1);
-			if (i == toRender.vertsPos.size() - 1) initPhysData[i].vel = glm::vec3(1, 1, 1);
+			if (i > toRender.vertsPos.size() - 11) initPhysData[i].vel = glm::vec3(1000, 0, 0);
+			if (i < 10) initPhysData[i].vel = glm::vec3(-1000, 0, 0);
 		}
 		
 		physVBOSize = toRender.vertsPos.size() * sizeof(PhysData);
@@ -234,14 +235,14 @@ public:
 		glBeginTransformFeedback(GL_POINTS);
 		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
 		glEndTransformFeedback();
-		glFlush();
+		//glFlush();
 	}
 	
 	
 	void doPhysics() {
 		/*static int count = 0;
 		++count;
-		if (count % 20 != 0) return;*/
+		if (count % 60 != 0) return;*/
 		
 		glUseProgram(physicsShader);
 		glBindVertexArray(physVAO);

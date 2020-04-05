@@ -10,6 +10,8 @@ in int exposedFaces[];
 in mat4 totalTransform[];
 
 //in vec3 cubeColor[];
+in vec4 specialColor[];
+out vec4 vertColor;
 //out vec3 vertColor;
 out vec2 texCoord;
 
@@ -38,6 +40,7 @@ bool bit(int field, int bit) {
 
 void main() {
 	//vertColor = cubeColor[0];
+	vertColor = specialColor[0];
 	
 	// m=minus p=plus
 	vec4 cornermmm = makeCorner(vec3(-1, -1, -1));

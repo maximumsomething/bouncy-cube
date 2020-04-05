@@ -17,21 +17,22 @@ uniform float timeDelta;
 
 uniform samplerBuffer allVerts;
 
-@include "axisAngle.glsl"
+@include "quaternion.glsl"
 
 
-mat3 inTurnMat = rotMatFromAxisAngle(inTurn);
+vec4 inTurnQuat = quat_from_axisAngle(inTurn);
 
 //const float groundY = 0;
 //const float timeDelta = 0.0083;
 // in force per distance
 const float materialSpringiness = 3000;
-const float materialTwistiness = 30000;
+const float materialTwistiness = 0;
 
 const float cubeMass = 1;
 
 const float dampingFactor = 0.05;
 
+//const float gravity = 32;
 const float gravity = 0;
 
 const float floorY = -50;
@@ -58,9 +59,9 @@ float neighborAmount = 0;
 
 void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	if (neighborIdx == -1) return;
-	vec3 normal = inTurnMat * baseNormal / 2;
+	vec3 normal = quat_rotate_vector(baseNormal / 2, inTurnQuat);
 	vec3 neighTurn = texelFetch(allVerts, neighborIdx * 4 + 1).xyz;
-	vec3 neighborNormal = rotMatFromAxisAngle(neighTurn) * -baseNormal / 2;
+	vec3 neighborNormal = quat_rotate_vector(-baseNormal / 2, quat_from_axisAngle(neighTurn));
 	vec3 neighPos = texelFetch(allVerts, neighborIdx * 4).xyz;
 	vec3 offset = (neighPos + neighborNormal) - (inPos + normal);
 	offsets += offset;
@@ -89,18 +90,23 @@ void main() {
 	outVel = mix(inVel, neighVels, dampingFactor * neighborAmount);
 	outVel = outVel + (spring(offsets) / cubeMass + vec3(0, -gravity, 0)) * timeDelta;
 	
-	outAngVel = mix(inAngVel, neighAngVels, 0* dampingFactor * neighborAmount);
-	outAngVel = outAngVel + (spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta;
+	vec3 dampedInAngVel = mix(inAngVel, neighAngVels, dampingFactor * neighborAmount);
+	//outAngVel = quat_to_axisAngle(quat_mul(quat_from_axisAngle(dampedInAngVel), quat_from_axisAngle((spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta)));
+	outAngVel = dampedInAngVel + (spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta;
 	//outAngVel = vec3(0, 0, 0);
 	
 	// basic ass collision checking
 	if (inPos.y < floorY) outVel.y = max(outVel.y, 0);
 	
 	outPos = inPos + outVel * timeDelta;
-	//outTurn = quat_mul(quat_from_angleAxis(outAngVel * timeDelta), inTurn);
+	//outTurn = quat_mul(quat_from_axisAngle(outAngVel * timeDelta), inTurn);
 	//outTurn = vec3(0, 0, 0);
-	outTurn = inTurn + outAngVel * timeDelta;
-	float outTurnAngle = length(outTurn);
+	//outTurn = inTurn + outAngVel * timeDelta;
+	outTurn = quat_to_axisAngle(quat_mul(quat_from_axisAngle(outAngVel * timeDelta), quat_from_axisAngle(inTurn)));
+
+	
+	
+	//float outTurnAngle = length(outTurn);
 	//if (outTurnAngle < -PI || outTurnAngle > PI) outTurn = outTurn / outTurnAngle * normAngle(outTurnAngle);
 	
 }

@@ -33,12 +33,12 @@ vec4 quat_from_angle_axis(float angle, vec3 axis) {
 	return vec4(axis * sn, cs);
 }
 
-vec4 quat_from_angleAxis(vec3 angleAxis) {
+vec4 quat_from_axisAngle(vec3 angleAxis) {
 	float angle = length(angleAxis);
 	return quat_from_angle_axis(angle, angleAxis / angle);
 }
 
-vec3 quat_to_angleAxis(vec4 quat) {
+vec3 quat_to_axisAngle(vec4 quat) {
 	return normalize(quat.xyz) * 2*acos(quat.w);
 }
 
