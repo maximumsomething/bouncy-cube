@@ -2,12 +2,18 @@
 
 
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in ivec3 neighborsM;
-layout (location = 2) in ivec3 neighborsP;
+layout (location = 1) in vec3 turn;
+layout (location = 2) in ivec3 neighborsM;
+layout (location = 3) in ivec3 neighborsP;
 
 //out vec3 cubeColor;
 
 uniform mat4 transform;
+
+out mat4 totalTransform;
+
+@include "axisAngle.glsl"
+
 
 // Stored in least significant bits
 out int exposedFaces = 0;
@@ -23,6 +29,8 @@ void main() {
 	if (neighborsP.x == -1) exposedFaces |= (1 << 3);
 	if (neighborsP.y == -1) exposedFaces |= (1 << 4);
 	if (neighborsP.z == -1) exposedFaces |= (1 << 5);
+	
+	totalTransform = mat4(rotMatFromAxisAngle(turn)) * transform;
 	
 	//cubeColor = vec3(float(gl_VertexID), .5, 0.5);
 	//cubeColor = vec3(.5, .5, .5);

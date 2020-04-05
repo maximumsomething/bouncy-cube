@@ -102,8 +102,11 @@ arrayND<bool, 3> genSphere(unsigned int radius) {
 
 
 constexpr int RADIUS = 10;
+constexpr int PHYS_STEPS_PER_FRAME = 20;
+constexpr int SLOWDOWN_FACTOR = 10;
 
-const GLchar * physOutputs[] = { "outPos", "outVel" };
+
+const GLchar * physOutputs[] = { "outPos", "outTurn", "outVel", "outAngVel" };
 
 // Renders everything
 class VoxelRendererImpl : public VoxelRenderer {
@@ -115,7 +118,16 @@ public:
 	
 	VoxelStorage toRender{genSphere(RADIUS)};
 	
-	GLuint renderVAO, physVAO, posVBO1, posVBO2, velVBO1, velVBO2, dataVBO, EBO, posBufTex, velBufTex;
+	GLuint renderVAO, physVAO, physVBO1, physVBO2, dataVBO, EBO, physBufTex;
+	
+	struct PhysData {
+		glm::vec3 pos = glm::zero<glm::vec3>();
+		glm::vec3 turn = glm::zero<glm::vec3>();
+		glm::vec3 vel = glm::zero<glm::vec3>();
+		glm::vec3 angVel = glm::zero<glm::vec3>();
+	};
+	
+	size_t physVBOSize;
 	
 	
 	VoxelRendererImpl() :
@@ -126,26 +138,33 @@ public:
 	})),
 	physicsShader(linkShaders({
 		loadShader("sim.vert", GL_VERTEX_SHADER)}, [] (GLuint toBeLinked) {
-		glTransformFeedbackVaryings(toBeLinked, sizeof(physOutputs) / sizeof(physOutputs[0]), physOutputs, GL_SEPARATE_ATTRIBS);
+		glTransformFeedbackVaryings(toBeLinked, sizeof(physOutputs) / sizeof(physOutputs[0]), physOutputs, GL_INTERLEAVED_ATTRIBS);
 	})) {
 		
 		glGenVertexArrays(1, &renderVAO);
 		glBindVertexArray(renderVAO);
 		
 		// Gen all pos and velocity VBOs
-		glGenBuffers(4, &posVBO1);
+		glGenBuffers(2, &physVBO1);
 		
 		// Set the initial positions
-		glBindBuffer(GL_ARRAY_BUFFER, posVBO1);
-		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), toRender.vertsPos.data(), GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
-		glEnableVertexAttribArray(0);
+		std::vector<PhysData> initPhysData(toRender.vertsPos.size());
+		for (unsigned i = 0; i < toRender.vertsPos.size(); ++i) {
+			initPhysData[i].pos = toRender.vertsPos[i];
+			//if (i < 10) initPhysData[i].vel = glm::vec3(1, 1, 1);
+			if (i == toRender.vertsPos.size() - 1) initPhysData[i].vel = glm::vec3(1, 1, 1);
+		}
 		
-		// Set the initial velocities to 0
-		glBindBuffer(GL_ARRAY_BUFFER, velVBO1);
-		void* blankData = calloc(toRender.vertsPos.size(), sizeof(glm::vec3));
-		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), blankData, GL_DYNAMIC_COPY);
-		free(blankData);
+		physVBOSize = toRender.vertsPos.size() * sizeof(PhysData);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, physVBO1);
+		glBufferData(GL_ARRAY_BUFFER, physVBOSize, initPhysData.data(), GL_DYNAMIC_COPY);
+		// draw pos
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), 0);
+		glEnableVertexAttribArray(0);
+		// draw turn
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, turn));
+		glEnableVertexAttribArray(1);
 		
 		glGenBuffers(1, &dataVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
@@ -159,18 +178,21 @@ public:
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, toRender.edgeIndices.size() * sizeof(uint32_t), toRender.edgeIndices.data(), GL_STATIC_DRAW);
 		
 		// Physics renderer
-		
 		glGenVertexArrays(1, &physVAO);
 		glBindVertexArray(physVAO);
 		glUseProgram(physicsShader);
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(1);
+		glEnableVertexAttribArray(2);
+		glEnableVertexAttribArray(3);
+		
 		
 		setVertDataAttrs(physicsShader);
-		glUniform1i(glGetUniformLocation(physicsShader, "allVertsPos"), 0);
-		glUniform1i(glGetUniformLocation(physicsShader, "allVertsVel"), 1);
+		glUniform1i(glGetUniformLocation(physicsShader, "allVerts"), 0);
 		
-		glGenTextures(2, &posBufTex);
+		glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
+		
+		glGenTextures(1, &physBufTex);
 	}
 	
 	void setVertDataAttrs(GLuint shader) {
@@ -186,30 +208,28 @@ public:
 		glCheckError();
 	}
 	
-	void physicsStep(GLuint inPosVBO, GLuint inVelVBO, GLuint outPosVBO, GLuint outVelVBO) {
+	void physicsStep(GLuint inVBO, GLuint outVBO) {
 		
-		// Clear the out buffers
-		glBindBuffer(GL_ARRAY_BUFFER, outPosVBO);
-		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), nullptr, GL_DYNAMIC_COPY);
+		// Clear the out buffer
+		glBindBuffer(GL_ARRAY_BUFFER, outVBO);
+		glBufferData(GL_ARRAY_BUFFER, physVBOSize, nullptr, GL_DYNAMIC_COPY);
 		
-		glBindBuffer(GL_ARRAY_BUFFER, outVelVBO);
-		glBufferData(GL_ARRAY_BUFFER, toRender.vertsPos.size() * sizeof(glm::vec3), nullptr, GL_DYNAMIC_COPY);
+		glBindBuffer(GL_ARRAY_BUFFER, inVBO);
+		// inPos
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), 0);
+		// inTurn
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, turn));
+		// inVel
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, vel));
+		// inAngVel
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, angVel));
 		
-		glBindBuffer(GL_ARRAY_BUFFER, inPosVBO);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
-		glBindBuffer(GL_ARRAY_BUFFER, inVelVBO);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), 0);
-		
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outPosVBO);
-		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, outVelVBO);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outVBO);
 		
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_BUFFER, posBufTex);
-		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, inPosVBO);
+		glBindTexture(GL_TEXTURE_BUFFER, physBufTex);
+		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, inVBO);
 		
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_BUFFER, velBufTex);
-		glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, inVelVBO);
 		
 		glBeginTransformFeedback(GL_POINTS);
 		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
@@ -217,17 +237,24 @@ public:
 		glFlush();
 	}
 	
+	
 	void doPhysics() {
 		/*static int count = 0;
 		++count;
-		if (count % 60 != 0) return;*/
+		if (count % 20 != 0) return;*/
 		
 		glUseProgram(physicsShader);
 		glBindVertexArray(physVAO);
 		glEnable(GL_RASTERIZER_DISCARD);
 		
-		physicsStep(posVBO1, velVBO1, posVBO2, velVBO2);
-		physicsStep(posVBO2, velVBO2, posVBO1, velVBO1);
+		assert(PHYS_STEPS_PER_FRAME % 2 == 0);
+		assert(PHYS_STEPS_PER_FRAME / 2 % SLOWDOWN_FACTOR == 0);
+		
+		for (int i = 0; i < PHYS_STEPS_PER_FRAME / 2 / SLOWDOWN_FACTOR; ++i) {
+			physicsStep(physVBO1, physVBO2);
+			physicsStep(physVBO2, physVBO1);
+		}
+		
 		glCheckError();
 		
 		glDisable(GL_RASTERIZER_DISCARD);

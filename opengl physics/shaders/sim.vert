@@ -1,54 +1,78 @@
 #version 330 core
 
 layout (location = 0) in vec3 inPos;
-layout (location = 1) in vec3 inVel;
-layout (location = 2) in ivec3 neighborsM;
-layout (location = 3) in ivec3 neighborsP;
+layout (location = 1) in vec3 inTurn;
+layout (location = 2) in vec3 inVel;
+layout (location = 3) in vec3 inAngVel;
+
+layout (location = 4) in ivec3 neighborsM;
+layout (location = 5) in ivec3 neighborsP;
 
 out vec3 outPos;
+out vec3 outTurn;
 out vec3 outVel;
+out vec3 outAngVel;
 
-uniform samplerBuffer allVertsPos;
-uniform samplerBuffer allVertsVel;
+uniform float timeDelta;
+
+uniform samplerBuffer allVerts;
+
+@include "axisAngle.glsl"
+
+
+mat3 inTurnMat = rotMatFromAxisAngle(inTurn);
 
 //const float groundY = 0;
-const float timeDelta = 0.0083;
+//const float timeDelta = 0.0083;
 // in force per distance
 const float materialSpringiness = 3000;
+const float materialTwistiness = 30000;
+
 const float cubeMass = 1;
 
 const float dampingFactor = 0.05;
 
-const float gravity = 32;
+const float gravity = 0;
 
 const float floorY = -50;
 
 
-// returns force
+// returns force, given offsets
 const float turn = 0.5;
 vec3 spring(vec3 offsets) {
-	if (length(offsets) < turn) return offsets * 3000;
+	/*if (length(offsets) < turn) return offsets * 3000;
 	else {
 		vec3 offsetsDir = normalize(offsets);
 		return 1000 * turn * offsetsDir + (offsets - offsetsDir * turn) * 5000;
-	}
+	}*/
+	return offsets * materialSpringiness;
 }
 
 
 vec3 offsets = vec3(0, 0, 0);
+vec3 angOffsets = vec3(0, 0, 0);
+vec3 twists = vec3(0, 0, 0);
 vec3 neighVels = vec3(0, 0, 0);
+vec3 neighAngVels = vec3(0, 0, 0);
 float neighborAmount = 0;
 
-void checkNeighbor(int neighborIdx, vec3 normal) {
+void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	if (neighborIdx == -1) return;
-	vec3 neighPos = texelFetch(allVertsPos, neighborIdx).xyz;
-	offsets += (neighPos - (inPos + normal));
+	vec3 normal = inTurnMat * baseNormal / 2;
+	vec3 neighTurn = texelFetch(allVerts, neighborIdx * 4 + 1).xyz;
+	vec3 neighborNormal = rotMatFromAxisAngle(neighTurn) * -baseNormal / 2;
+	vec3 neighPos = texelFetch(allVerts, neighborIdx * 4).xyz;
+	vec3 offset = (neighPos + neighborNormal) - (inPos + normal);
+	offsets += offset;
+	angOffsets += cross(normal, offset);
+	
+	twists += neighTurn - inTurn;
 	
 	++neighborAmount;
-	neighVels += texelFetch(allVertsVel, neighborIdx).xyz;
+	neighVels += texelFetch(allVerts, neighborIdx * 4 + 2).xyz;
+	neighAngVels += texelFetch(allVerts, neighborIdx * 4 + 3).xyz;
 	
 }
-
 
 void main() {
 	checkNeighbor(neighborsM.x, vec3(-1, 0, 0));
@@ -58,12 +82,25 @@ void main() {
 	checkNeighbor(neighborsP.y, vec3(0, 1, 0));
 	checkNeighbor(neighborsP.z, vec3(0, 0, 1));
 	
-	if (neighborAmount > 0) neighVels /= neighborAmount;
+	if (neighborAmount > 0) {
+		neighVels /= neighborAmount;
+		neighAngVels /= neighborAmount;
+	}
 	outVel = mix(inVel, neighVels, dampingFactor * neighborAmount);
 	outVel = outVel + (spring(offsets) / cubeMass + vec3(0, -gravity, 0)) * timeDelta;
 	
+	outAngVel = mix(inAngVel, neighAngVels, 0* dampingFactor * neighborAmount);
+	outAngVel = outAngVel + (spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta;
+	//outAngVel = vec3(0, 0, 0);
 	
 	// basic ass collision checking
 	if (inPos.y < floorY) outVel.y = max(outVel.y, 0);
+	
 	outPos = inPos + outVel * timeDelta;
+	//outTurn = quat_mul(quat_from_angleAxis(outAngVel * timeDelta), inTurn);
+	//outTurn = vec3(0, 0, 0);
+	outTurn = inTurn + outAngVel * timeDelta;
+	float outTurnAngle = length(outTurn);
+	//if (outTurnAngle < -PI || outTurnAngle > PI) outTurn = outTurn / outTurnAngle * normAngle(outTurnAngle);
+	
 }

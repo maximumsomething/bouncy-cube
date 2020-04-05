@@ -57,11 +57,10 @@ GLuint loadCubemap(const std::vector<std::string>& faces) {
     return textureID;
 }
 
-GLuint loadShader(const char* name, GLenum type) {
-	
+std::string loadShaderFile(const char* name) {
 	FILE* file = fopen((getResourcesPath() + "/shaders/" + name).c_str(), "r");
 	if (file == nullptr) {
-		perror((std::string("shader ") + name).c_str());
+		perror((std::string("Error loading shader ") + name).c_str());
 		glfwTerminate();
 		exit(1);
 	}
@@ -70,13 +69,41 @@ GLuint loadShader(const char* name, GLenum type) {
 	long fsize = ftell(file);
 	fseek(file, 0, SEEK_SET);  /* same as rewind(f); */
 
-	char *shaderString = (char *) malloc(fsize + 1);
-	fread(shaderString, 1, fsize, file);
+	std::string shaderString(fsize, '\0');
+	fread(&shaderString.front(), 1, fsize, file);
 	fclose(file);
-	shaderString[fsize] = 0;
+	return shaderString;
+}
+
+// Processes includes. Must be of the form @include "file" as the first thing on a line
+GLuint loadShader(const char* name, GLenum type) {
+	
+	std::string shaderString = loadShaderFile(name);
+	
+	// Very quick and dirty include handling
+	std::vector<std::string> includeFiles;
+	std::vector<const char*> stringPtrs(1, shaderString.c_str());
+	
+	size_t lastPos = 0;
+	while ((lastPos = shaderString.find("\n@include", lastPos)) != std::string::npos) {
+		
+		size_t lineEnd = shaderString.find("\n", lastPos + 1);
+		std::string line = shaderString.substr(lastPos, lineEnd - lastPos);
+		size_t quotedStart = line.find("\"") + 1;
+		std::string quoted = line.substr(quotedStart, line.rfind("\"") - quotedStart);
+		
+		if (quoted.length() < 1) {
+			std::cout << "Shader include error: not enough quotes, or nothing between them" << std::endl;
+		}
+		
+		includeFiles.push_back(loadShaderFile(quoted.c_str()));
+		stringPtrs.push_back(includeFiles.back().c_str());
+		shaderString[lastPos] = '\0';
+		stringPtrs.push_back(&shaderString[lineEnd]);
+	}
 	
 	GLuint shader = glCreateShader(type);
-	glShaderSource(shader, 1, &shaderString, NULL);
+	glShaderSource(shader, stringPtrs.size(), stringPtrs.data(), NULL);
 	glCompileShader(shader);
 	
 	int  success;
@@ -89,7 +116,6 @@ GLuint loadShader(const char* name, GLenum type) {
 		glfwTerminate();
 		exit(1);
 	}
-	free(shaderString);
 	return shader;
 }
 

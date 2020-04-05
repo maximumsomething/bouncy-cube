@@ -23,54 +23,6 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "09E86EDD-1658-4F59-8592-D1CE9B81F296"
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "opengl physics/voxels.cpp"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "213"
-            endingLineNumber = "213"
-            landmarkName = "VoxelRendererImpl()"
-            landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "09E86EDD-1658-4F59-8592-D1CE9B81F296 - 6aa7e3041954f7bb"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "VoxelRendererImpl::VoxelRendererImpl()"
-                  moduleName = "opengl physics"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/max/Documents/opengl%20physics/opengl%20physics/voxels.cpp"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "207"
-                  endingLineNumber = "207"
-                  offsetFromSymbolStart = "21">
-               </Location>
-               <Location
-                  uuid = "09E86EDD-1658-4F59-8592-D1CE9B81F296 - 6aa7e3041954f7bb"
-                  shouldBeEnabled = "No"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "VoxelRendererImpl::VoxelRendererImpl()"
-                  moduleName = "opengl physics"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/max/Documents/opengl%20physics/opengl%20physics/voxels.cpp"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "207"
-                  endingLineNumber = "207"
-                  offsetFromSymbolStart = "749">
-               </Location>
-            </Locations>
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
             uuid = "5C8127C1-43F9-4059-851C-CBCCC6434463"
             shouldBeEnabled = "No"
             ignoreCount = "0"
@@ -78,8 +30,8 @@
             filePath = "opengl physics/voxels.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "169"
-            endingLineNumber = "169"
+            startingLineNumber = "100"
+            endingLineNumber = "100"
             landmarkName = "genSphere(radius)"
             landmarkType = "9">
          </BreakpointContent>
@@ -98,6 +50,22 @@
             endingLineNumber = "15"
             landmarkName = "loadGLImage(name, target)"
             landmarkType = "9">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A7734EDE-2243-4E3C-957B-5C8C2B74B3C9"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "opengl physics/voxels.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "268"
+            endingLineNumber = "268"
+            landmarkName = "render(view, projection)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
