@@ -35,10 +35,12 @@ vec4 quat_from_angle_axis(float angle, vec3 axis) {
 
 vec4 quat_from_axisAngle(vec3 angleAxis) {
 	float angle = length(angleAxis);
+	if (angle == 0) return QUATERNION_IDENTITY;
 	return quat_from_angle_axis(angle, angleAxis / angle);
 }
 
 vec3 quat_to_axisAngle(vec4 quat) {
+	if (/*quat.xyz == vec3(0, 0, 0) || */quat.w >= 1) return vec3(0, 0, 0);
 	return normalize(quat.xyz) * 2*acos(quat.w);
 }
 
