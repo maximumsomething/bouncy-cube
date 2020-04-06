@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 // Not caring about sides right now, just rendering all faces.
 //uniform samplerBuffer vertices;

@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 layout (location = 0) in vec3 inPos;
 layout (location = 1) in vec3 inTurn;
@@ -12,6 +12,7 @@ out vec3 outPos;
 out vec3 outTurn;
 out vec3 outVel;
 out vec3 outAngVel;
+out float debugFeedback;
 
 uniform float timeDelta;
 
@@ -32,8 +33,8 @@ const float cubeMass = 1;
 
 const float dampingFactor = 0.05;
 
-//const float gravity = 32;
-const float gravity = 0;
+const float gravity = 32;
+//const float gravity = 0;
 
 const float floorY = -50;
 
@@ -66,6 +67,7 @@ void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	vec3 offset = (neighPos + neighborNormal) - (inPos + normal);
 	offsets += offset;
 	angOffsets += cross(normal, offset);
+	debugFeedback += length(offset);
 	
 	twists += neighTurn - inTurn;
 	
@@ -76,6 +78,7 @@ void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 }
 
 void main() {
+	debugFeedback = 0;
 	checkNeighbor(neighborsM.x, vec3(-1, 0, 0));
 	checkNeighbor(neighborsM.y, vec3(0, -1, 0));
 	checkNeighbor(neighborsM.z, vec3(0, 0, -1));

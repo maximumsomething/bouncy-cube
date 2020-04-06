@@ -106,7 +106,7 @@ constexpr int PHYS_STEPS_PER_FRAME = 6;
 constexpr int SLOWDOWN_FACTOR = 3;
 
 
-const GLchar * physOutputs[] = { "outPos", "outTurn", "outVel", "outAngVel" };
+const GLchar * physOutputs[] = { "outPos", "outTurn", "outVel", "outAngVel", "gl_NextBuffer", "debugFeedback" };
 
 // Renders everything
 class VoxelRendererImpl : public VoxelRenderer {
@@ -118,7 +118,8 @@ public:
 	
 	VoxelStorage toRender{genSphere(RADIUS)};
 	
-	GLuint renderVAO, physVAO, physVBO1, physVBO2, dataVBO, EBO, physBufTex;
+	// PhysVBO is read and written by the physics code. DebugFeedbackVBO is written to but not read by the physics code, and DataVBO is read but not written to by the physics code. All three are read by the drawing code.
+	GLuint renderVAO, physVAO, physVBO1, physVBO2, debugFeedbackVBO, dataVBO, EBO, physBufTex;
 	
 	struct PhysData {
 		glm::vec3 pos = glm::zero<glm::vec3>();
@@ -127,7 +128,7 @@ public:
 		glm::vec3 angVel = glm::zero<glm::vec3>();
 	};
 	
-	size_t physVBOSize;
+	size_t physVBOSize, feedbackVBOSize;
 	
 	
 	VoxelRendererImpl() :
@@ -144,22 +145,23 @@ public:
 		glGenVertexArrays(1, &renderVAO);
 		glBindVertexArray(renderVAO);
 		
-		// Gen all pos and velocity VBOs
-		glGenBuffers(2, &physVBO1);
+		// Gen all VBOs and the EBO
+		glGenBuffers(5, &physVBO1);
 		
 		// Set the initial positions
 		std::vector<PhysData> initPhysData(toRender.vertsPos.size());
 		for (unsigned i = 0; i < toRender.vertsPos.size(); ++i) {
 			initPhysData[i].pos = toRender.vertsPos[i];
 			//if (i < 10) initPhysData[i].vel = glm::vec3(1, 1, 1);
-			if (i > toRender.vertsPos.size() - 11) initPhysData[i].vel = glm::vec3(1000, 0, 0);
-			if (i < 10) initPhysData[i].vel = glm::vec3(-1000, 0, 0);
+			//if (i > toRender.vertsPos.size() - 11) initPhysData[i].vel = glm::vec3(1000, 0, 0);
+			//if (i < 10) initPhysData[i].vel = glm::vec3(-1000, 0, 0);
 		}
 		
 		physVBOSize = toRender.vertsPos.size() * sizeof(PhysData);
+		feedbackVBOSize = toRender.vertsPos.size() * sizeof(float);
 		
 		glBindBuffer(GL_ARRAY_BUFFER, physVBO1);
-		glBufferData(GL_ARRAY_BUFFER, physVBOSize, initPhysData.data(), GL_DYNAMIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, physVBOSize, initPhysData.data(), GL_STREAM_COPY);
 		// draw pos
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), 0);
 		glEnableVertexAttribArray(0);
@@ -167,13 +169,19 @@ public:
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, turn));
 		glEnableVertexAttribArray(1);
 		
-		glGenBuffers(1, &dataVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
+		float* clearData = (float *) calloc(1, feedbackVBOSize);
+		glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, clearData, GL_STREAM_COPY);
+		free(clearData);
+		// draw debug feedback
+		glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
+		glEnableVertexAttribArray(2);
+		
 		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
 		glBufferData(GL_ARRAY_BUFFER, toRender.vertsData.size() * sizeof(VoxelStorage::VertData), toRender.vertsData.data(), GL_STATIC_DRAW);
 		setVertDataAttrs(renderShader);
 		
 		
-		glGenBuffers(1, &EBO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, toRender.edgeIndices.size() * sizeof(uint32_t), toRender.edgeIndices.data(), GL_STATIC_DRAW);
@@ -213,7 +221,8 @@ public:
 		
 		// Clear the out buffer
 		glBindBuffer(GL_ARRAY_BUFFER, outVBO);
-		glBufferData(GL_ARRAY_BUFFER, physVBOSize, nullptr, GL_DYNAMIC_COPY);
+		glBufferData(GL_ARRAY_BUFFER, physVBOSize, nullptr, GL_STREAM_COPY);
+
 		
 		glBindBuffer(GL_ARRAY_BUFFER, inVBO);
 		// inPos
@@ -226,6 +235,8 @@ public:
 		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, angVel));
 		
 		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outVBO);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, debugFeedbackVBO);
+		
 		
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_BUFFER, physBufTex);

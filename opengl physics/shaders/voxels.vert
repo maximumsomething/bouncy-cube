@@ -1,10 +1,11 @@
-#version 330 core
+#version 410 core
 
 
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 turn;
-layout (location = 2) in ivec3 neighborsM;
-layout (location = 3) in ivec3 neighborsP;
+layout (location = 2) in float debugFeedback;
+layout (location = 3) in ivec3 neighborsM;
+layout (location = 4) in ivec3 neighborsP;
 
 out vec4 specialColor;
 
@@ -33,6 +34,7 @@ void main() {
 	totalTransform = transform * mat4(rotMatFromAxisAngle(turn));
 	
 	//specialColor = vec3(float(gl_VertexID), .5, 0.5);
-	if (gl_VertexID > 4261) specialColor = vec4(1, 0, 0, .5);
-	else specialColor = vec4(0, 0, 0, 0);
+	//if (gl_VertexID > 4261) specialColor = vec4(1, 0, 0, .5);
+	//else specialColor = vec4(0, 0, 0, 0);
+	specialColor = vec4(1, 0, 0, min(debugFeedback * 0.5, 0.5));
 }
