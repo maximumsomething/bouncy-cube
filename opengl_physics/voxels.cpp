@@ -90,7 +90,7 @@ arrayND<bool, 3> genSphere(float radius) {
 	arrayND<bool, 3> sphere({arrSiz, arrSiz, arrSiz});
 	
 	
-	for (int i = 0; i < sphere.total(); ++i) {
+	for (unsigned i = 0; i < sphere.total(); ++i) {
 		auto coord = sphere.ind2coord(i);
 		sphere.linear()[i] =
 		pow((float) coord[0] - radius + 0.5, 2) + pow((float) coord[1] - radius + 0.5, 2) + pow((float) coord[2] - radius + 0.5, 2)
@@ -120,7 +120,7 @@ public:
 	VoxelStorage toRender{genSphere(RADIUS)};
 	
 	// PhysVBO is read and written by the physics code. DebugFeedbackVBO is written to but not read by the physics code, and DataVBO is read but not written to by the physics code. All three are read by the drawing code.
-	GLuint renderVAO, physVAO, physVBO1, physVBO2, debugFeedbackVBO, dataVBO, EBO, physBufTex;
+	GLuint voxelRenderVAO, vectorRenderVAO, physVAO, physVBO1, physVBO2, debugFeedbackVBO, dataVBO, EBO, physBufTex;
 	
 	struct PhysData {
 		glm::vec3 pos = glm::zero<glm::vec3>();
@@ -148,8 +148,8 @@ public:
 		glTransformFeedbackVaryings(toBeLinked, sizeof(physOutputs) / sizeof(physOutputs[0]), physOutputs, GL_INTERLEAVED_ATTRIBS);
 	})) {
 		
-		glGenVertexArrays(1, &renderVAO);
-		glBindVertexArray(renderVAO);
+		glGenVertexArrays(3, &voxelRenderVAO);
+		glBindVertexArray(voxelRenderVAO);
 		
 		// Gen all VBOs and the EBO
 		glGenBuffers(5, &physVBO1);
@@ -169,13 +169,8 @@ public:
 		
 		glBindBuffer(GL_ARRAY_BUFFER, physVBO1);
 		glBufferData(GL_ARRAY_BUFFER, physVBOSize, initPhysData.data(), GL_STREAM_COPY);
-		// draw pos
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), 0);
-		glEnableVertexAttribArray(0);
-		// draw turn
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, turn));
-		glEnableVertexAttribArray(1);
-		
+		setDrawAttrs();
+
 		glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
 		float* clearData = (float *) calloc(1, feedbackVBOSize);
 		glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, clearData, GL_STREAM_COPY);
@@ -186,15 +181,22 @@ public:
 		
 		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
 		glBufferData(GL_ARRAY_BUFFER, toRender.vertsData.size() * sizeof(VoxelStorage::VertData), toRender.vertsData.data(), GL_STATIC_DRAW);
-		setVertDataAttrs(voxelRenderShader);
-		
+		setVertDataAttrs(voxelRenderShader);		
 		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, toRender.edgeIndices.size() * sizeof(uint32_t), toRender.edgeIndices.data(), GL_STATIC_DRAW);
 		
+		// Drawing debug vectors
+		glBindVertexArray(vectorRenderVAO);
+		setDrawAttrs();
+		glBindBuffer(GL_ARRAY_BUFFER, physVBO1);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, vel));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, angVel));
+		glEnableVertexAttribArray(3);
+
 		// Physics renderer
-		glGenVertexArrays(1, &physVAO);
 		glBindVertexArray(physVAO);
 		glUseProgram(physicsShader);
 		glEnableVertexAttribArray(0);
@@ -209,6 +211,14 @@ public:
 		glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
 		
 		glGenTextures(1, &physBufTex);
+	}
+
+	void setDrawAttrs() {
+		glBindBuffer(GL_ARRAY_BUFFER, physVBO1);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), 0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData), (void*) offsetof(PhysData, turn));
+		glEnableVertexAttribArray(1);
 	}
 	
 	void setVertDataAttrs(GLuint shader) {
@@ -291,19 +301,20 @@ public:
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_DEPTH_TEST);
-		glBindVertexArray(renderVAO);
 		
 		drawVoxels(totalTransform);
+		drawVectors(totalTransform);
 		
 		//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		
 		//usleep(500000);
 	}
 	void drawVoxels(glm::mat4 transform) {
-		
+
+		glBindVertexArray(voxelRenderVAO);
 		glUseProgram(voxelRenderShader);
 		glUniformMatrix4fv(glGetUniformLocation(voxelRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
-		
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, cubeTexture);
 		
@@ -316,10 +327,9 @@ public:
 		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
 	}
 	void drawVectors(glm::mat4 transform) {
+		glBindVertexArray(vectorRenderVAO);
 		glUseProgram(vectorRenderShader);
 		glUniformMatrix4fv(glGetUniformLocation(vectorRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
-		
-		
 		
 		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
 	}
@@ -330,18 +340,4 @@ std::unique_ptr<VoxelRenderer> getVoxelRenderer() {
 	return std::make_unique<VoxelRendererImpl>();
 }
 
-
-int testy() {
-	
-	arrayND<std::string, 3> test1({50, 30, 20});
-	
-	test1[49][29][19] = "hello world";
-	//std::cout << test1[49][29][19] << std::endl;
-	
-	auto arr = test1.ind2coord(test1.coord2ind({49,29,19}));
-
-	return 0;
-}
-
-int tester = testy();
 

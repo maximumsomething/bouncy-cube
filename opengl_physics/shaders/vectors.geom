@@ -24,8 +24,9 @@ void drawLine(vec3 color, vec3 pointing) {
 	EndPrimitive();
 }
 
+// Velocity: green, Angular velocity: purple, Current angle: Blue
 void main() {
-	drawLine(vec3(0, 1, 0), vertIn[0].vel);
-	drawLine(vec3(1, 0, 1), vertIn[0].angVel);
+	drawLine(vec3(0, 1, 0), vertIn[0].vel * 0.3);
+	drawLine(vec3(1, 0, 1), vertIn[0].angVel * 0.3);
 	drawLine(vec3(0, 0, 1), vertIn[0].turn);
 }
