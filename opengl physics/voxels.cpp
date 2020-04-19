@@ -113,7 +113,7 @@ const GLchar * physOutputs[] = { "outPos", "outTurn", "outVel", "outAngVel", "gl
 class VoxelRendererImpl : public VoxelRenderer {
 public:
 	
-	GLuint renderShader, physicsShader;
+	GLuint voxelRenderShader, vectorRenderShader, physicsShader;
 	GLuint cubeTexture = loadTexture("rubber.jpg");
 	//GLuint cubeTexture = loadTexture("astroturf-2.jpeg");
 	
@@ -133,10 +133,15 @@ public:
 	
 	
 	VoxelRendererImpl() :
-	renderShader(linkShaders({
+	voxelRenderShader(linkShaders({
 		loadShader("voxels.vert", GL_VERTEX_SHADER),
 		loadShader("voxels.frag", GL_FRAGMENT_SHADER),
 		loadShader("voxels.geom", GL_GEOMETRY_SHADER)
+	})),
+	vectorRenderShader(linkShaders({
+		loadShader("vectors.vert", GL_VERTEX_SHADER),
+		loadShader("vectors.frag", GL_FRAGMENT_SHADER),
+		loadShader("vectors.geom", GL_GEOMETRY_SHADER)
 	})),
 	physicsShader(linkShaders({
 		loadShader("sim.vert", GL_VERTEX_SHADER)}, [] (GLuint toBeLinked) {
@@ -154,9 +159,9 @@ public:
 		for (unsigned i = 0; i < toRender.vertsPos.size(); ++i) {
 			initPhysData[i].pos = toRender.vertsPos[i];
 			//if (i < 10) initPhysData[i].vel = glm::vec3(1, 1, 1);
-			if (i > toRender.vertsPos.size() - 51) initPhysData[i].vel = glm::vec3(100, 0, 0);
-			if (i < 50) initPhysData[i].vel = glm::vec3(-100, 0, 0);
-			//initPhysData[i].angVel = glm::vec3(0, 30, 0);
+			//if (i > toRender.vertsPos.size() - 51) initPhysData[i].vel = glm::vec3(100, 0, 0);
+			//if (i < 50) initPhysData[i].vel = glm::vec3(-100, 0, 0);
+			initPhysData[i].angVel = glm::vec3(0, 3, 0);
 		}
 		
 		physVBOSize = toRender.vertsPos.size() * sizeof(PhysData);
@@ -181,7 +186,7 @@ public:
 		
 		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
 		glBufferData(GL_ARRAY_BUFFER, toRender.vertsData.size() * sizeof(VoxelStorage::VertData), toRender.vertsData.data(), GL_STATIC_DRAW);
-		setVertDataAttrs(renderShader);
+		setVertDataAttrs(voxelRenderShader);
 		
 		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -283,16 +288,21 @@ public:
 		
 		auto totalTransform = projection * view * model;
 		
-
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		
-		glUseProgram(renderShader);
-		glUniformMatrix4fv(glGetUniformLocation(renderShader, "transform"), 1, GL_FALSE, glm::value_ptr(totalTransform));
-		
+		glEnable(GL_DEPTH_TEST);
 		glBindVertexArray(renderVAO);
 		
-		glEnable(GL_DEPTH_TEST);
+		drawVoxels(totalTransform);
+		
+		//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		
+		//usleep(500000);
+	}
+	void drawVoxels(glm::mat4 transform) {
+		
+		glUseProgram(voxelRenderShader);
+		glUniformMatrix4fv(glGetUniformLocation(voxelRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 		
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, cubeTexture);
@@ -304,11 +314,16 @@ public:
 		
 		// Draw everything
 		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
-		
-		//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-		
-		//usleep(500000);
 	}
+	void drawVectors(glm::mat4 transform) {
+		glUseProgram(vectorRenderShader);
+		glUniformMatrix4fv(glGetUniformLocation(vectorRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
+		
+		
+		
+		glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
+	}
+	
 };
 
 std::unique_ptr<VoxelRenderer> getVoxelRenderer() {
