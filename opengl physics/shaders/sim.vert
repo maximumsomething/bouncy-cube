@@ -84,14 +84,18 @@ void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	offsets += offset;
 	vec3 angOffset = cross(normal, offset);
 	angOffsets += angOffset;
-	vec3 twistOffset = normAxisAngle(projVec(neighTurn, normal) - projVec(inTurn, normal));
+	//vec3 twistOffset = normAxisAngle(projVec(neighTurn, normal) - projVec(inTurn, normal));
+	vec3 twistOffset = normAxisAngle(neighTurn - inTurn);
 	twists += twistOffset;
 	debugFeedback += length(offset) + length(angOffset) + length(twistOffset);
 	
 	
 	++neighborAmount;
-	neighVels += texelFetch(allVerts, neighborIdx * 4 + 2).xyz;
-	neighAngVels += texelFetch(allVerts, neighborIdx * 4 + 3).xyz;
+	vec3 neighVel = texelFetch(allVerts, neighborIdx * 4 + 2).xyz;
+	vec3 neighAngVel = texelFetch(allVerts, neighborIdx * 4 + 3).xyz;
+	
+	neighVels += neighVel + cross(neighAngVel, neighborNormal) - cross(inAngVel, normal);
+	neighAngVels += neighAngVel;
 	
 }
 
