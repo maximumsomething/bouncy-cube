@@ -85,8 +85,9 @@ private:
 	}
 };
 
-arrayND<bool, 3> genSphere(unsigned int radius) {
-	arrayND<bool, 3> sphere({radius*2, radius*2, radius*2});
+arrayND<bool, 3> genSphere(float radius) {
+	unsigned int arrSiz = (unsigned int) ceil(radius*2);
+	arrayND<bool, 3> sphere({arrSiz, arrSiz, arrSiz});
 	
 	
 	for (int i = 0; i < sphere.total(); ++i) {
@@ -101,9 +102,9 @@ arrayND<bool, 3> genSphere(unsigned int radius) {
 }
 
 
-constexpr int RADIUS = 10;
-constexpr int PHYS_STEPS_PER_FRAME = 6;
-constexpr int SLOWDOWN_FACTOR = 3;
+constexpr float RADIUS = 10;
+constexpr int PHYS_STEPS_PER_FRAME = 2;
+constexpr int SLOWDOWN_FACTOR = 1;
 
 
 const GLchar * physOutputs[] = { "outPos", "outTurn", "outVel", "outAngVel", "gl_NextBuffer", "debugFeedback" };
@@ -153,8 +154,9 @@ public:
 		for (unsigned i = 0; i < toRender.vertsPos.size(); ++i) {
 			initPhysData[i].pos = toRender.vertsPos[i];
 			//if (i < 10) initPhysData[i].vel = glm::vec3(1, 1, 1);
-			//if (i > toRender.vertsPos.size() - 11) initPhysData[i].vel = glm::vec3(1000, 0, 0);
-			//if (i < 10) initPhysData[i].vel = glm::vec3(-1000, 0, 0);
+			if (i > toRender.vertsPos.size() - 51) initPhysData[i].vel = glm::vec3(100, 0, 0);
+			if (i < 50) initPhysData[i].vel = glm::vec3(-100, 0, 0);
+			//initPhysData[i].angVel = glm::vec3(0, 30, 0);
 		}
 		
 		physVBOSize = toRender.vertsPos.size() * sizeof(PhysData);
@@ -253,7 +255,7 @@ public:
 	void doPhysics() {
 		/*static int count = 0;
 		++count;
-		if (count % 60 != 0) return;*/
+		if (count % 20 != 0) return;*/
 		
 		glUseProgram(physicsShader);
 		glBindVertexArray(physVAO);
@@ -272,9 +274,9 @@ public:
 		glDisable(GL_RASTERIZER_DISCARD);
 	}
 	
-	void render(glm::mat4 view, glm::mat4 projection) override {
+	void render(glm::mat4 view, glm::mat4 projection, bool paused) override {
 		
-		doPhysics();
+		if (!paused) doPhysics();
 		
 		glm::mat4 model(1.0f);
 		model = glm::translate(model, glm::vec3(-RADIUS, -RADIUS, -RADIUS*2));

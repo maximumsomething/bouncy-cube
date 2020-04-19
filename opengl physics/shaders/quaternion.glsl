@@ -7,6 +7,7 @@
 #endif
 
 
+
 // Quaternion multiplication
 vec4 quat_mul(vec4 q1, vec4 q2) {
 	return vec4(
@@ -17,8 +18,17 @@ vec4 quat_mul(vec4 q1, vec4 q2) {
 
 // Vector rotation with a quaternion
 vec3 quat_rotate_vector(vec3 v, vec4 r) {
-	vec4 r_c = r * vec4(-1, -1, -1, 1);
-	return quat_mul(r, quat_mul(vec4(v, 0), r_c)).xyz;
+	//vec4 r_c = r * vec4(-1, -1, -1, 1);
+	//return quat_mul(r, quat_mul(vec4(v, 0), r_c)).xyz;
+	return v + 2.0 * cross(r.xyz, cross(r.xyz, v) + r.w * v);
+}
+
+mat3 quat_to_mat(vec4 q) {
+	return mat3(
+	1 - 2*q.y*q.y - 2*q.z*q.z,     2*q.x*q.y + 2*q.z*q.w,     2*q.x*q.z - 2*q.y*q.w,
+		2*q.x*q.y - 2*q.z*q.w, 1 - 2*q.x*q.x - 2*q.z*q.z,     2*q.y*q.z + 2*q.x*q.w,
+		2*q.x*q.z + 2*q.y*q.w,     2*q.y*q.z - 2*q.x*q.w, 1 - 2*q.x*q.x - 2*q.y*q.y
+	);
 }
 
 vec3 quat_rotate_vector_at(vec3 v, vec3 center, vec4 r) {
@@ -40,7 +50,7 @@ vec4 quat_from_axisAngle(vec3 angleAxis) {
 }
 
 vec3 quat_to_axisAngle(vec4 quat) {
-	if (/*quat.xyz == vec3(0, 0, 0) || */quat.w >= 1) return vec3(0, 0, 0);
+	if (abs(quat.w) >= 1) return vec3(0, 0, 0);
 	return normalize(quat.xyz) * 2*acos(quat.w);
 }
 

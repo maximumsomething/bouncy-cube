@@ -15,9 +15,3 @@ mat3 rotMatFromAxisAngle(vec3 axisAngle) {
 				oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
 				oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
 }
-
-float normAngle(float x) {
-	x = mod(x + PI,PI*2);
-	if (x < 0) x += PI*2;
-	return x - PI;
-}

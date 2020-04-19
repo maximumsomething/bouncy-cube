@@ -1,7 +1,5 @@
 #version 410 core
 
-// Not caring about sides right now, just rendering all faces.
-//uniform samplerBuffer vertices;
 
 layout (points) in;
 layout (triangle_strip, max_vertices = 24) out;

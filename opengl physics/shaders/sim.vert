@@ -27,14 +27,15 @@ vec4 inTurnQuat = quat_from_axisAngle(inTurn);
 //const float timeDelta = 0.0083;
 // in force per distance
 const float materialSpringiness = 3000;
-const float materialTwistiness = 0;
+const float materialTwistiness = 500;
 
 const float cubeMass = 1;
 
 const float dampingFactor = 0.05;
+const float angDampingFactor = 0.02;
 
-const float gravity = 32;
-//const float gravity = 0;
+//const float gravity = 32;
+const float gravity = 0;
 
 const float floorY = -50;
 
@@ -50,6 +51,21 @@ vec3 spring(vec3 offsets) {
 	return offsets * materialSpringiness;
 }
 
+vec3 projVec(vec3 toProject, vec3 along) {
+	along = normalize(along);
+	return along * dot(toProject, along);
+}
+
+float normAngle(float inAngle) {
+	inAngle = mod(inAngle + PI, PI * 2);
+	if (inAngle < 0) inAngle += PI * 2;
+	return inAngle - PI;
+}
+vec3 normAxisAngle(vec3 inAxisAngle) {
+	float inAngle = length(inAxisAngle);
+	if (abs(inAngle) < PI) return inAxisAngle;
+	return inAxisAngle / inAngle * normAngle(inAngle);
+}
 
 vec3 offsets = vec3(0, 0, 0);
 vec3 angOffsets = vec3(0, 0, 0);
@@ -66,10 +82,12 @@ void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	vec3 neighPos = texelFetch(allVerts, neighborIdx * 4).xyz;
 	vec3 offset = (neighPos + neighborNormal) - (inPos + normal);
 	offsets += offset;
-	angOffsets += cross(normal, offset);
-	debugFeedback += length(offset);
+	vec3 angOffset = cross(normal, offset);
+	angOffsets += angOffset;
+	vec3 twistOffset = normAxisAngle(projVec(neighTurn, normal) - projVec(inTurn, normal));
+	twists += twistOffset;
+	debugFeedback += length(offset) + length(angOffset) + length(twistOffset);
 	
-	twists += neighTurn - inTurn;
 	
 	++neighborAmount;
 	neighVels += texelFetch(allVerts, neighborIdx * 4 + 2).xyz;
@@ -93,7 +111,7 @@ void main() {
 	outVel = mix(inVel, neighVels, dampingFactor * neighborAmount);
 	outVel = outVel + (spring(offsets) / cubeMass + vec3(0, -gravity, 0)) * timeDelta;
 	
-	vec3 dampedInAngVel = mix(inAngVel, neighAngVels, dampingFactor * neighborAmount);
+	vec3 dampedInAngVel = mix(inAngVel, neighAngVels, angDampingFactor * neighborAmount);
 	//outAngVel = quat_to_axisAngle(quat_mul(quat_from_axisAngle(dampedInAngVel), quat_from_axisAngle((spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta)));
 	outAngVel = dampedInAngVel + (spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta;
 	//outAngVel = vec3(0, 0, 0);
@@ -105,11 +123,5 @@ void main() {
 	//outTurn = quat_mul(quat_from_axisAngle(outAngVel * timeDelta), inTurn);
 	//outTurn = vec3(0, 0, 0);
 	//outTurn = inTurn + outAngVel * timeDelta;
-	outTurn = quat_to_axisAngle(quat_mul(quat_from_axisAngle(outAngVel * timeDelta), quat_from_axisAngle(inTurn)));
-
-	
-	
-	//float outTurnAngle = length(outTurn);
-	//if (outTurnAngle < -PI || outTurnAngle > PI) outTurn = outTurn / outTurnAngle * normAngle(outTurnAngle);
-	
+	outTurn = normAxisAngle(quat_to_axisAngle(quat_mul(quat_from_axisAngle(outAngVel * timeDelta), inTurnQuat)));
 }

@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <string>
+#include <map>
 #include <stdio.h>
 #include <chrono>
 
@@ -21,12 +22,17 @@ struct {
 	int height = 600;
 } windowData;
 
+	
+std::map<int, std::function<void(int, int, int)>> keyListeners;
 
-void processInput(GLFWwindow *window) {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	
+	if (keyListeners.count(key) != 0) keyListeners[key](scancode, action, mods);
 }
-
+// scancode, action, mods
+void addKeyListener(int key, std::function<void(int, int, int)> callback) {
+	keyListeners[key] = callback;
+}
 
 
 class Skybox {
@@ -136,6 +142,8 @@ class HelloTriangle {
 	
 	std::unique_ptr<VoxelRenderer> voxelRenderer = getVoxelRenderer();
 	
+	bool paused = false;
+	
 public:
 	HelloTriangle() {
 		
@@ -161,6 +169,10 @@ public:
 		glEnableVertexAttribArray(1);
 		
 		floorTexture = loadTexture("wall.jpg");*/
+		
+		addKeyListener(GLFW_KEY_P, [this](int scancode, int action, int mods) {
+			if (action == GLFW_PRESS) paused = !paused;
+		});
 		
 	}
 	
@@ -232,7 +244,7 @@ public:
 		
 		
 		skybox.render(view, projection);
-		voxelRenderer->render(view, projection);
+		voxelRenderer->render(view, projection, paused);
 		
 		/*
 		glUseProgram(shaderProgram);
@@ -277,9 +289,15 @@ int main(int argc, char** argv) {
 	
 	glViewport(0, 0, windowData.width, windowData.height);
 	
-	glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+	glfwSetFramebufferSizeCallback(window, [](GLFWwindow* windoww, int width, int height) {
 		windowData.width = width; windowData.height = height;
 		glViewport(0, 0, width, height);
+	});
+	
+	glfwSetKeyCallback(window, key_callback);
+	
+	addKeyListener(GLFW_KEY_ESCAPE, [window](int scancode, int action, int mods) {
+		 glfwSetWindowShouldClose(window, true);
 	});
 	
 	
@@ -291,8 +309,6 @@ int main(int argc, char** argv) {
 	// main loop
 	while(!glfwWindowShouldClose(window))
 	{
-		processInput(window);
-		
 		renderer.processInput(window);
 		renderer.render();
 		
