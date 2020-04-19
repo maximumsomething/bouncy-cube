@@ -103,7 +103,7 @@ arrayND<bool, 3> genSphere(float radius) {
 
 
 constexpr float RADIUS = 10;
-constexpr int PHYS_STEPS_PER_FRAME = 2;
+constexpr int PHYS_STEPS_PER_FRAME = 10;
 constexpr int SLOWDOWN_FACTOR = 1;
 
 
