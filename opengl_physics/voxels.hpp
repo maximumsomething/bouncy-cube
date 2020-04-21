@@ -7,7 +7,7 @@
 
 class VoxelRenderer {
 public:
-	virtual void render(glm::mat4 view, glm::mat4 projection, bool paused) = 0;
+	virtual void render(glm::mat4 view, glm::mat4 projection) = 0;
 	virtual ~VoxelRenderer() = default;
 };
 

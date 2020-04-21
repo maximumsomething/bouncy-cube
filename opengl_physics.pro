@@ -7,14 +7,16 @@ HEADERS = \
    $$PWD/opengl_physics/arrayND.hpp \
    $$PWD/opengl_physics/bridge.hpp \
    $$PWD/opengl_physics/loaders.hpp \
-   $$PWD/opengl_physics/voxels.hpp
+   $$PWD/opengl_physics/voxels.hpp \
+    opengl_physics/input.hpp
 
 SOURCES = \
    $$PWD/opengl_physics/libs/glad.c \
    $$PWD/opengl_physics/bridge_linux_test.cpp \
    $$PWD/opengl_physics/loaders.cpp \
    $$PWD/opengl_physics/main.cpp \
-   $$PWD/opengl_physics/voxels.cpp
+   $$PWD/opengl_physics/voxels.cpp \
+    opengl_physics/input.cpp
 
 INCLUDEPATH = $$PWD/opengl_physics/include/
 

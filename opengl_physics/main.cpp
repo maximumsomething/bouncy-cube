@@ -7,12 +7,14 @@
 
 #include <iostream>
 #include <string>
-#include <map>
 #include <stdio.h>
+#include <unistd.h>
 #include <chrono>
+#include <execinfo.h>
 
 #include "bridge.hpp"
 #include "loaders.hpp"
+#include "input.hpp"
 #include "voxels.hpp"
 
 
@@ -21,18 +23,6 @@ struct {
 	int width = 800;
 	int height = 600;
 } windowData;
-
-	
-std::map<int, std::function<void(int, int, int)>> keyListeners;
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	
-	if (keyListeners.count(key) != 0) keyListeners[key](scancode, action, mods);
-}
-// scancode, action, mods
-void addKeyListener(int key, std::function<void(int, int, int)> callback) {
-	keyListeners[key] = callback;
-}
 
 
 class Skybox {
@@ -142,8 +132,6 @@ class HelloTriangle {
 	
 	std::unique_ptr<VoxelRenderer> voxelRenderer = getVoxelRenderer();
 	
-	bool paused = false;
-	
 public:
 	HelloTriangle() {
 		
@@ -169,11 +157,6 @@ public:
 		glEnableVertexAttribArray(1);
 		
 		floorTexture = loadTexture("wall.jpg");*/
-		
-		addKeyListener(GLFW_KEY_P, [this](int scancode, int action, int mods) {
-			if (action == GLFW_PRESS) paused = !paused;
-		});
-		
 	}
 	
 	std::chrono::steady_clock::time_point lastFrameTime = std::chrono::steady_clock::now();
@@ -244,7 +227,7 @@ public:
 		
 		
 		skybox.render(view, projection);
-		voxelRenderer->render(view, projection, paused);
+		voxelRenderer->render(view, projection);
 		
 		/*
 		glUseProgram(shaderProgram);
@@ -307,6 +290,17 @@ void APIENTRY myDebugOutput(GLenum source,
 		case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
 		case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
 	} std::cout << std::endl;
+
+	/*std::cout << "Backtrace:" << std::endl;
+	// https://stackoverflow.com/a/77336/4062079
+	void *array[10];
+	size_t size;
+
+	// get void*'s for all entries on the stack
+	size = backtrace(array, 10);
+
+	// print out all the frames to stderr
+	backtrace_symbols_fd(array, size, STDOUT_FILENO);*/
 	std::cout << std::endl;
 }
 

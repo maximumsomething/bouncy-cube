@@ -3,7 +3,7 @@
 #define QUATERNION_IDENTITY vec4(0, 0, 0, 1)
 
 #ifndef PI
-#define PI 3.1415926
+#define PI radians(180)
 #endif
 
 

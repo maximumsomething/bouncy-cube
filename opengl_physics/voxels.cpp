@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "arrayND.hpp"
+#include "input.hpp"
 #include "loaders.hpp"
 
 
@@ -130,7 +131,8 @@ public:
 	};
 	
 	size_t physVBOSize, feedbackVBOSize;
-	
+
+	bool paused	= false, doingStep = false;
 	
 	VoxelRendererImpl() :
 	voxelRenderShader(linkShaders({
@@ -211,6 +213,17 @@ public:
 		glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
 		
 		glGenTextures(1, &physBufTex);
+
+
+		addKeyListener(GLFW_KEY_P, [this](int scancode, int action, int mods) {
+			if (action == GLFW_PRESS) paused = !paused;
+		});
+		addKeyListener(GLFW_KEY_PERIOD, [this](int scancode, int action, int mods) {
+			if (action == GLFW_PRESS) {
+				doingStep = true;
+				paused = true;
+			}
+		});
 	}
 
 	void setDrawAttrs() {
@@ -268,10 +281,8 @@ public:
 	
 	
 	void doPhysics() {
-		/*static int count = 0;
-		++count;
-		if (count % 20 != 0) return;*/
-		
+		if (paused && !doingStep) return;
+
 		glUseProgram(physicsShader);
 		glBindVertexArray(physVAO);
 		glEnable(GL_RASTERIZER_DISCARD);
@@ -279,7 +290,13 @@ public:
 		assert(PHYS_STEPS_PER_FRAME % 2 == 0);
 		assert(PHYS_STEPS_PER_FRAME / 2 % SLOWDOWN_FACTOR == 0);
 		
-		for (int i = 0; i < PHYS_STEPS_PER_FRAME / 2 / SLOWDOWN_FACTOR; ++i) {
+		int stepsToDo = PHYS_STEPS_PER_FRAME / 2 / SLOWDOWN_FACTOR;
+		if (doingStep) {
+			stepsToDo = 1;
+			doingStep = false;
+		}
+
+		for (int i = 0; i < stepsToDo; ++i) {
 			physicsStep(physVBO1, physVBO2);
 			physicsStep(physVBO2, physVBO1);
 		}
@@ -289,9 +306,9 @@ public:
 		glDisable(GL_RASTERIZER_DISCARD);
 	}
 	
-	void render(glm::mat4 view, glm::mat4 projection, bool paused) override {
+	void render(glm::mat4 view, glm::mat4 projection) override {
 		
-		if (!paused) doPhysics();
+		doPhysics();
 		
 		glm::mat4 model(1.0f);
 		model = glm::translate(model, glm::vec3(-RADIUS, -RADIUS, -RADIUS*2));
