@@ -30,9 +30,10 @@ bool vecValid(vec3 chk) {
 }
 
 // Stored in least significant bits
-out int exposedFaces = 0;
+out int exposedFaces;
 
 void main() {
+	exposedFaces = 0;
 	gl_Position = transform * vec4(aPos, 1.0);
 	if (!vecValid(aPos)) gl_Position = transform * vec4(-10, -10, -10, 1);
 	

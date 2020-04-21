@@ -27,7 +27,7 @@ vec4 inTurnQuat = quat_from_axisAngle(inTurn);
 //const float timeDelta = 0.0083;
 // in force per distance
 const float materialSpringiness = 3000;
-const float materialTwistiness = 500;
+const float materialTwistiness = 0;//500;
 
 const float cubeMass = 1;
 
@@ -63,7 +63,7 @@ float normAngle(float inAngle) {
 }
 vec3 normAxisAngle(vec3 inAxisAngle) {
 	float inAngle = length(inAxisAngle);
-	if (abs(inAngle) < PI) return inAxisAngle;
+	if (inAngle < PI) return inAxisAngle;
 	return inAxisAngle / inAngle * normAngle(inAngle);
 }
 
@@ -74,18 +74,23 @@ vec3 neighVels = vec3(0, 0, 0);
 vec3 neighAngVels = vec3(0, 0, 0);
 float neighborAmount = 0;
 
+// Torques, angular velocities, etc. can be simply added together as axisAngle vectors. This is because the rotation is infinitesimal. If it's a rotation in actual space, however, it must be applied in a more complicated way, which is done here by converting them into quaternions.
+
 void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	if (neighborIdx == -1) return;
 	vec3 normal = quat_rotate_vector(baseNormal / 2, inTurnQuat);
 	vec3 neighTurn = texelFetch(allVerts, neighborIdx * 4 + 1).xyz;
-	vec3 neighborNormal = quat_rotate_vector(-baseNormal / 2, quat_from_axisAngle(neighTurn));
+	vec4 neighTurnQuat = quat_from_axisAngle(neighTurn);
+	vec3 neighborNormal = quat_rotate_vector(-baseNormal / 2, neighTurnQuat);
 	vec3 neighPos = texelFetch(allVerts, neighborIdx * 4).xyz;
 	vec3 offset = (neighPos + neighborNormal) - (inPos + normal);
 	offsets += offset;
 	vec3 angOffset = cross(normal, offset);
 	angOffsets += angOffset;
 	//vec3 twistOffset = normAxisAngle(projVec(neighTurn, normal) - projVec(inTurn, normal));
-	vec3 twistOffset = normAxisAngle(neighTurn - inTurn);
+	//vec3 twistOffset = normAxisAngle(neighTurn - inTurn);
+	// Once it becomes an "offset", it is no longer simply a rotation, but a torque divided by a value of (torque per angular offset).
+	vec3 twistOffset = normAxisAngle(quat_to_axisAngle(quat_mul(neighTurnQuat, quat_conj(inTurnQuat))));
 	twists += twistOffset;
 	debugFeedback += length(offset) + length(angOffset) + length(twistOffset);
 	
@@ -116,7 +121,6 @@ void main() {
 	outVel = outVel + (spring(offsets) / cubeMass + vec3(0, -gravity, 0)) * timeDelta;
 	
 	vec3 dampedInAngVel = mix(inAngVel, neighAngVels, angDampingFactor * neighborAmount);
-	//outAngVel = quat_to_axisAngle(quat_mul(quat_from_axisAngle(dampedInAngVel), quat_from_axisAngle((spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta)));
 	outAngVel = dampedInAngVel + (spring(angOffsets) + materialTwistiness * twists) / cubeMass * timeDelta;
 	//outAngVel = vec3(0, 0, 0);
 	
@@ -124,7 +128,6 @@ void main() {
 	if (inPos.y < floorY) outVel.y = max(outVel.y, 0);
 	
 	outPos = inPos + outVel * timeDelta;
-	//outTurn = quat_mul(quat_from_axisAngle(outAngVel * timeDelta), inTurn);
 	//outTurn = vec3(0, 0, 0);
 	//outTurn = inTurn + outAngVel * timeDelta;
 	outTurn = normAxisAngle(quat_to_axisAngle(quat_mul(quat_from_axisAngle(outAngVel * timeDelta), inTurnQuat)));

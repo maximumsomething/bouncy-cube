@@ -17,6 +17,7 @@ out vec2 texCoord;
 
 
 vec4 makeCorner(vec3 directions) {
+	directions *= 0.2;
 	return gl_in[0].gl_Position + totalTransform[0] * vec4(directions * 0.5, 0.0);
 }
 void emitFace(vec4[4] corners) {
