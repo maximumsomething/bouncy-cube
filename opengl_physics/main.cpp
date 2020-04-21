@@ -24,6 +24,10 @@ struct {
 	int height = 600;
 } windowData;
 
+#ifndef __APPLE__
+#define DEBUG_OUTPUT_SUPPORTED
+#endif
+
 
 class Skybox {
 	
@@ -244,6 +248,8 @@ public:
 	}
 };
 
+
+#ifdef DEBUG_OUTPUT_SUPPORTED
 // Straight from https://learnopengl.com/In-Practice/Debugging
 void APIENTRY myDebugOutput(GLenum source,
 							GLenum type,
@@ -303,16 +309,19 @@ void APIENTRY myDebugOutput(GLenum source,
 	backtrace_symbols_fd(array, size, STDOUT_FILENO);*/
 	std::cout << std::endl;
 }
-
+#endif
 
 int main(int argc, char** argv) {
 	
 	glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+#ifdef DEBUG_OUTPUT_SUPPORTED
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 	
 	GLFWwindow* window = glfwCreateWindow(800, 600, "Boingboing", nullptr, nullptr);
 	if (window == nullptr)
@@ -328,14 +337,17 @@ int main(int argc, char** argv) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
-
+	
 	GLint flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	
+#ifdef DEBUG_OUTPUT_SUPPORTED
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(myDebugOutput, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	}
+#endif
 	
 	glViewport(0, 0, windowData.width, windowData.height);
 	

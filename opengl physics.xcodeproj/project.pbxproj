@@ -7,26 +7,27 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		50C49C5C242BCD7100BEE377 /* voxels.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50C49C5A242BCD7100BEE377 /* voxels.cpp */; };
-		50C95DD12426B18000F14718 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 50C95DD02426B18000F14718 /* Assets.xcassets */; };
-		50C95DDF2426B19D00F14718 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50C95DDE2426B19D00F14718 /* main.cpp */; };
-		50C95DE62426B1F800F14718 /* libglfw.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 50C95DE52426B1F800F14718 /* libglfw.3.dylib */; };
-		50C95DE72426B1F800F14718 /* libglfw.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 50C95DE52426B1F800F14718 /* libglfw.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		50FC7F652426B50E00E62AF9 /* glad.c in Sources */ = {isa = PBXBuildFile; fileRef = 50FC7F642426B50E00E62AF9 /* glad.c */; };
-		50FC7F672426BDA000E62AF9 /* shaders in Resources */ = {isa = PBXBuildFile; fileRef = 50FC7F662426BDA000E62AF9 /* shaders */; };
-		50FC7F692426BFB900E62AF9 /* bridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 50FC7F682426BFB900E62AF9 /* bridge.mm */; };
-		50FDBB402427A6BE00A3C1C0 /* loaders.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50FDBB3E2427A6BE00A3C1C0 /* loaders.cpp */; };
-		50FDBB422427A92A00A3C1C0 /* textures in Resources */ = {isa = PBXBuildFile; fileRef = 50FDBB412427A92A00A3C1C0 /* textures */; };
+		5013934D244F9C9F00774108 /* input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5013934B244F9C9F00774108 /* input.cpp */; };
+		50B5D928244F950000D1867C /* voxels.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50B5D901244F950000D1867C /* voxels.cpp */; };
+		50B5D929244F950000D1867C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 50B5D903244F950000D1867C /* Assets.xcassets */; };
+		50B5D92A244F950000D1867C /* loaders.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50B5D904244F950000D1867C /* loaders.cpp */; };
+		50B5D93A244F950000D1867C /* bridge-mac.mm in Sources */ = {isa = PBXBuildFile; fileRef = 50B5D919244F950000D1867C /* bridge-mac.mm */; };
+		50B5D93B244F950000D1867C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50B5D91A244F950000D1867C /* main.cpp */; };
+		50B5D943244F955800D1867C /* textures in Resources */ = {isa = PBXBuildFile; fileRef = 50B5D93F244F955700D1867C /* textures */; };
+		50B5D944244F955800D1867C /* shaders in Resources */ = {isa = PBXBuildFile; fileRef = 50B5D940244F955800D1867C /* shaders */; };
+		50B5D946244F959800D1867C /* glad.c in Sources */ = {isa = PBXBuildFile; fileRef = 50B5D945244F959800D1867C /* glad.c */; };
+		50B5D948244F979900D1867C /* libglfw.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 50B5D947244F979900D1867C /* libglfw.3.dylib */; };
+		50B5D949244F979900D1867C /* libglfw.3.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 50B5D947244F979900D1867C /* libglfw.3.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		50C95DE82426B1F800F14718 /* Embed Libraries */ = {
+		50B5D94A244F979900D1867C /* Embed Libraries */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				50C95DE72426B1F800F14718 /* libglfw.3.dylib in Embed Libraries */,
+				50B5D949244F979900D1867C /* libglfw.3.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -34,24 +35,28 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		50C49C5A242BCD7100BEE377 /* voxels.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = voxels.cpp; sourceTree = "<group>"; };
-		50C49C5B242BCD7100BEE377 /* voxels.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = voxels.hpp; sourceTree = "<group>"; };
-		50C49C5D242BD44300BEE377 /* arrayND.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = arrayND.hpp; sourceTree = "<group>"; };
+		5013934B244F9C9F00774108 /* input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = input.cpp; sourceTree = "<group>"; };
+		5013934C244F9C9F00774108 /* input.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = input.hpp; sourceTree = "<group>"; };
+		50B5D901244F950000D1867C /* voxels.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = voxels.cpp; sourceTree = "<group>"; };
+		50B5D902244F950000D1867C /* bridge.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = bridge.hpp; sourceTree = "<group>"; };
+		50B5D903244F950000D1867C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		50B5D904244F950000D1867C /* loaders.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = loaders.cpp; sourceTree = "<group>"; };
+		50B5D905244F950000D1867C /* voxels.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = voxels.hpp; sourceTree = "<group>"; };
+		50B5D906244F950000D1867C /* opengl_physics.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = opengl_physics.entitlements; sourceTree = "<group>"; };
+		50B5D907244F950000D1867C /* .gitignore */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		50B5D908244F950000D1867C /* loaders.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = loaders.hpp; sourceTree = "<group>"; };
+		50B5D909244F950000D1867C /* arrayND.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = arrayND.hpp; sourceTree = "<group>"; };
+		50B5D919244F950000D1867C /* bridge-mac.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = "bridge-mac.mm"; sourceTree = "<group>"; };
+		50B5D91A244F950000D1867C /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		50B5D91B244F950000D1867C /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		50B5D93D244F955700D1867C /* libs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libs; sourceTree = "<group>"; };
+		50B5D93E244F955700D1867C /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
+		50B5D93F244F955700D1867C /* textures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = textures; sourceTree = "<group>"; };
+		50B5D940244F955800D1867C /* shaders */ = {isa = PBXFileReference; lastKnownFileType = folder; path = shaders; sourceTree = "<group>"; };
+		50B5D945244F959800D1867C /* glad.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = glad.c; path = opengl_physics/libs/glad.c; sourceTree = "<group>"; };
+		50B5D947244F979900D1867C /* libglfw.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.dylib; path = opengl_physics/libs/libglfw.3.dylib; sourceTree = "<group>"; };
 		50C95DCA2426B17F00F14718 /* opengl physics.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "opengl physics.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		50C95DD02426B18000F14718 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		50C95DD52426B18000F14718 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		50C95DD82426B18000F14718 /* opengl_physics.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = opengl_physics.entitlements; sourceTree = "<group>"; };
-		50C95DDE2426B19D00F14718 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		50C95DE02426B1C900F14718 /* include */ = {isa = PBXFileReference; lastKnownFileType = folder; path = include; sourceTree = "<group>"; };
-		50C95DE12426B1C900F14718 /* libs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = libs; sourceTree = "<group>"; };
 		50C95DE52426B1F800F14718 /* libglfw.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.dylib; path = "opengl physics/libs/libglfw.3.dylib"; sourceTree = "<group>"; };
-		50FC7F642426B50E00E62AF9 /* glad.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = glad.c; path = "opengl physics/libs/glad.c"; sourceTree = "<group>"; };
-		50FC7F662426BDA000E62AF9 /* shaders */ = {isa = PBXFileReference; lastKnownFileType = folder; path = shaders; sourceTree = "<group>"; };
-		50FC7F682426BFB900E62AF9 /* bridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = bridge.mm; sourceTree = "<group>"; };
-		50FC7F6A2426BFCE00E62AF9 /* bridge.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = bridge.hpp; sourceTree = "<group>"; };
-		50FDBB3E2427A6BE00A3C1C0 /* loaders.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = loaders.cpp; sourceTree = "<group>"; };
-		50FDBB3F2427A6BE00A3C1C0 /* loaders.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = loaders.hpp; sourceTree = "<group>"; };
-		50FDBB412427A92A00A3C1C0 /* textures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = textures; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,18 +64,43 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				50C95DE62426B1F800F14718 /* libglfw.3.dylib in Frameworks */,
+				50B5D948244F979900D1867C /* libglfw.3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		50B5D8F2244F950000D1867C /* opengl_physics */ = {
+			isa = PBXGroup;
+			children = (
+				50B5D901244F950000D1867C /* voxels.cpp */,
+				50B5D902244F950000D1867C /* bridge.hpp */,
+				50B5D903244F950000D1867C /* Assets.xcassets */,
+				50B5D904244F950000D1867C /* loaders.cpp */,
+				50B5D905244F950000D1867C /* voxels.hpp */,
+				5013934B244F9C9F00774108 /* input.cpp */,
+				5013934C244F9C9F00774108 /* input.hpp */,
+				50B5D906244F950000D1867C /* opengl_physics.entitlements */,
+				50B5D907244F950000D1867C /* .gitignore */,
+				50B5D908244F950000D1867C /* loaders.hpp */,
+				50B5D909244F950000D1867C /* arrayND.hpp */,
+				50B5D919244F950000D1867C /* bridge-mac.mm */,
+				50B5D91A244F950000D1867C /* main.cpp */,
+				50B5D91B244F950000D1867C /* Info.plist */,
+				50B5D93E244F955700D1867C /* include */,
+				50B5D93D244F955700D1867C /* libs */,
+				50B5D940244F955800D1867C /* shaders */,
+				50B5D93F244F955700D1867C /* textures */,
+			);
+			path = opengl_physics;
+			sourceTree = "<group>";
+		};
 		50C95DC12426B17F00F14718 = {
 			isa = PBXGroup;
 			children = (
-				50FC7F642426B50E00E62AF9 /* glad.c */,
-				50C95DCC2426B17F00F14718 /* opengl physics */,
+				50B5D945244F959800D1867C /* glad.c */,
+				50B5D8F2244F950000D1867C /* opengl_physics */,
 				50C95DCB2426B17F00F14718 /* Products */,
 				50C95DE42426B1F800F14718 /* Frameworks */,
 			);
@@ -84,31 +114,10 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		50C95DCC2426B17F00F14718 /* opengl physics */ = {
-			isa = PBXGroup;
-			children = (
-				50C95DD02426B18000F14718 /* Assets.xcassets */,
-				50C95DD52426B18000F14718 /* Info.plist */,
-				50C95DD82426B18000F14718 /* opengl_physics.entitlements */,
-				50FC7F682426BFB900E62AF9 /* bridge.mm */,
-				50FC7F6A2426BFCE00E62AF9 /* bridge.hpp */,
-				50C95DDE2426B19D00F14718 /* main.cpp */,
-				50C49C5A242BCD7100BEE377 /* voxels.cpp */,
-				50C49C5B242BCD7100BEE377 /* voxels.hpp */,
-				50C49C5D242BD44300BEE377 /* arrayND.hpp */,
-				50FDBB3E2427A6BE00A3C1C0 /* loaders.cpp */,
-				50FDBB3F2427A6BE00A3C1C0 /* loaders.hpp */,
-				50FDBB412427A92A00A3C1C0 /* textures */,
-				50FC7F662426BDA000E62AF9 /* shaders */,
-				50C95DE02426B1C900F14718 /* include */,
-				50C95DE12426B1C900F14718 /* libs */,
-			);
-			path = "opengl physics";
-			sourceTree = "<group>";
-		};
 		50C95DE42426B1F800F14718 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				50B5D947244F979900D1867C /* libglfw.3.dylib */,
 				50C95DE52426B1F800F14718 /* libglfw.3.dylib */,
 			);
 			name = Frameworks;
@@ -124,7 +133,7 @@
 				50C95DC62426B17F00F14718 /* Sources */,
 				50C95DC72426B17F00F14718 /* Frameworks */,
 				50C95DC82426B17F00F14718 /* Resources */,
-				50C95DE82426B1F800F14718 /* Embed Libraries */,
+				50B5D94A244F979900D1867C /* Embed Libraries */,
 			);
 			buildRules = (
 			);
@@ -172,9 +181,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				50C95DD12426B18000F14718 /* Assets.xcassets in Resources */,
-				50FC7F672426BDA000E62AF9 /* shaders in Resources */,
-				50FDBB422427A92A00A3C1C0 /* textures in Resources */,
+				50B5D944244F955800D1867C /* shaders in Resources */,
+				50B5D929244F950000D1867C /* Assets.xcassets in Resources */,
+				50B5D943244F955800D1867C /* textures in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -185,11 +194,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				50FC7F692426BFB900E62AF9 /* bridge.mm in Sources */,
-				50FDBB402427A6BE00A3C1C0 /* loaders.cpp in Sources */,
-				50C95DDF2426B19D00F14718 /* main.cpp in Sources */,
-				50FC7F652426B50E00E62AF9 /* glad.c in Sources */,
-				50C49C5C242BCD7100BEE377 /* voxels.cpp in Sources */,
+				50B5D93A244F950000D1867C /* bridge-mac.mm in Sources */,
+				50B5D92A244F950000D1867C /* loaders.cpp in Sources */,
+				5013934D244F9C9F00774108 /* input.cpp in Sources */,
+				50B5D93B244F950000D1867C /* main.cpp in Sources */,
+				50B5D928244F950000D1867C /* voxels.cpp in Sources */,
+				50B5D946244F959800D1867C /* glad.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,8 +323,8 @@
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl physics/include\"";
-				INFOPLIST_FILE = "opengl physics/Info.plist";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl_physics/include\"";
+				INFOPLIST_FILE = opengl_physics/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -322,6 +332,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/opengl\\ physics/libs",
+					"$(PROJECT_DIR)/opengl_physics/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "nothingness.opengl-physics";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -336,8 +347,8 @@
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl physics/include\"";
-				INFOPLIST_FILE = "opengl physics/Info.plist";
+				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl_physics/include\"";
+				INFOPLIST_FILE = opengl_physics/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -345,6 +356,7 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/opengl\\ physics/libs",
+					"$(PROJECT_DIR)/opengl_physics/libs",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "nothingness.opengl-physics";
 				PRODUCT_NAME = "$(TARGET_NAME)";
