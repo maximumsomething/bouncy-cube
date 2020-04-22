@@ -1,7 +1,9 @@
 #version 410 core
 
+@include "quaternion.glsl"
+
 layout (location = 0) in vec3 inPos;
-layout (location = 1) in vec3 inTurn;
+layout (location = 1) in vec4 inTurn;
 layout (location = 2) in vec3 inVel;
 layout (location = 3) in vec3 inAngVel;
 
@@ -9,33 +11,30 @@ layout (location = 4) in ivec3 neighborsM;
 layout (location = 5) in ivec3 neighborsP;
 
 out vec3 outPos;
-out vec3 outTurn;
+out vec4 outTurn;
 out vec3 outVel;
 out vec3 outAngVel;
 out float debugFeedback;
 
 uniform float timeDelta;
 
-uniform samplerBuffer allVerts;
+uniform samplerBuffer allVerts3D;
+uniform samplerBuffer allVerts4D;
 
-@include "quaternion.glsl"
-
-
-vec4 inTurnQuat = quat_from_axisAngle(inTurn);
 
 //const float groundY = 0;
 //const float timeDelta = 0.0083;
 // in force per distance
 const float materialSpringiness = 3000;
-const float materialTwistiness = 0;//500;
+const float materialTwistiness = 1000;
 
 const float cubeMass = 1;
 
 const float dampingFactor = 0.05;
-const float angDampingFactor = 0.02;
+const float angDampingFactor = 0.05;
 
-//const float gravity = 32;
-const float gravity = 0;
+const float gravity = 32;
+//const float gravity = 0;
 
 const float floorY = -50;
 
@@ -78,11 +77,14 @@ float neighborAmount = 0;
 
 void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	if (neighborIdx == -1) return;
-	vec3 normal = quat_rotate_vector(baseNormal / 2, inTurnQuat);
-	vec3 neighTurn = texelFetch(allVerts, neighborIdx * 4 + 1).xyz;
-	vec4 neighTurnQuat = quat_from_axisAngle(neighTurn);
-	vec3 neighborNormal = quat_rotate_vector(-baseNormal / 2, neighTurnQuat);
-	vec3 neighPos = texelFetch(allVerts, neighborIdx * 4).xyz;
+	vec3 normal = quat_rotate_vector(baseNormal / 2, inTurn);
+	//vec3 normal = baseNormal / 2;
+	
+	vec4 neighTurn = texelFetch(allVerts4D, neighborIdx);
+	vec3 neighborNormal = quat_rotate_vector(-baseNormal / 2, neighTurn);
+	//vec3 neighborNormal = -baseNormal / 2;
+	
+	vec3 neighPos = texelFetch(allVerts3D, neighborIdx * 3).xyz;
 	vec3 offset = (neighPos + neighborNormal) - (inPos + normal);
 	offsets += offset;
 	vec3 angOffset = cross(normal, offset);
@@ -90,14 +92,14 @@ void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	//vec3 twistOffset = normAxisAngle(projVec(neighTurn, normal) - projVec(inTurn, normal));
 	//vec3 twistOffset = normAxisAngle(neighTurn - inTurn);
 	// Once it becomes an "offset", it is no longer simply a rotation, but a torque divided by a value of (torque per angular offset).
-	vec3 twistOffset = normAxisAngle(quat_to_axisAngle(quat_mul(neighTurnQuat, quat_conj(inTurnQuat))));
+	vec3 twistOffset = normAxisAngle(quat_to_axisAngle(quat_mul(neighTurn, quat_conj(inTurn))));
 	twists += twistOffset;
 	debugFeedback += length(offset) + length(angOffset) + length(twistOffset);
 	
 	
 	++neighborAmount;
-	vec3 neighVel = texelFetch(allVerts, neighborIdx * 4 + 2).xyz;
-	vec3 neighAngVel = texelFetch(allVerts, neighborIdx * 4 + 3).xyz;
+	vec3 neighVel = texelFetch(allVerts3D, neighborIdx * 3 + 1).xyz;
+	vec3 neighAngVel = texelFetch(allVerts3D, neighborIdx * 3 + 2).xyz;
 	
 	neighVels += neighVel + cross(neighAngVel, neighborNormal) - cross(inAngVel, normal);
 	neighAngVels += neighAngVel;
@@ -130,5 +132,6 @@ void main() {
 	outPos = inPos + outVel * timeDelta;
 	//outTurn = vec3(0, 0, 0);
 	//outTurn = inTurn + outAngVel * timeDelta;
-	outTurn = normAxisAngle(quat_to_axisAngle(quat_mul(quat_from_axisAngle(outAngVel * timeDelta), inTurnQuat)));
+	outTurn = quat_mul(quat_from_axisAngle(outAngVel * timeDelta), inTurn);
+	//outTurn = QUATERNION_IDENTITY;
 }

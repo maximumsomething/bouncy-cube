@@ -1,14 +1,15 @@
 
 #version 410 core
 
+@include "quaternion.glsl"
+
 layout (points) in;
 layout (line_strip, max_vertices = 6) out;
 
 uniform mat4 transform;
 
-
 in PHYS_PROPS {
-	vec3 turn;
+	vec4 turn;
 	vec3 vel;
 	vec3 angVel;
 } vertIn[];
@@ -28,5 +29,5 @@ void drawLine(vec3 color, vec3 pointing) {
 void main() {
 	drawLine(vec3(0, 1, 0), vertIn[0].vel * 0.3);
 	drawLine(vec3(1, 0, 1), vertIn[0].angVel * 0.3);
-	drawLine(vec3(0, 0, 1), vertIn[0].turn);
+	drawLine(vec3(0, 0, 1), quat_to_axisAngle(vertIn[0].turn));
 }

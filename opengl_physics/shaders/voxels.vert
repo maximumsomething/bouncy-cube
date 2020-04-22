@@ -2,7 +2,7 @@
 
 
 layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 turn;
+layout (location = 1) in vec4 turn;
 layout (location = 2) in float debugFeedback;
 layout (location = 3) in ivec3 neighborsM;
 layout (location = 4) in ivec3 neighborsP;
@@ -46,7 +46,7 @@ void main() {
 	if (neighborsP.y == -1) exposedFaces |= (1 << 4);
 	if (neighborsP.z == -1) exposedFaces |= (1 << 5);
 	
-	totalTransform = transform * mat4(/*rotMatFromAxisAngle(turn)*/quat_to_mat(quat_from_axisAngle(turn)));
+	totalTransform = transform * mat4(quat_to_mat(turn));
 	//if (vecHasNan(turn)) totalTransform = transform;
 	
 	//specialColor = vec3(float(gl_VertexID), .5, 0.5);

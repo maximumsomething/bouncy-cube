@@ -50,6 +50,7 @@ vec4 quat_from_axisAngle(vec3 angleAxis) {
 }
 
 vec3 quat_to_axisAngle(vec4 quat) {
+	quat = normalize(quat);
 	if (abs(quat.w) >= 1) return vec3(0, 0, 0);
 	return normalize(quat.xyz) * 2*acos(quat.w);
 }
