@@ -33,8 +33,8 @@ void emitFace(vec4[4] corners) {
 }
 
 bool bit(int field, int bit) {
-	//return (field & (1 << bit)) != 0;
-	return true;
+	return (field & (1 << bit)) != 0;
+	//return true;
 }
 
 void main() {

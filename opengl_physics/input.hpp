@@ -4,8 +4,23 @@
 #include <functional>
 #include <GLFW/glfw3.h>
 
+struct WindowData {
+	GLFWwindow* window;
+	int width = 800;
+	int height = 600;
+};
+extern WindowData windowData;
+
+
+
+// int scancode, int action, int mods
 void addKeyListener(int key, std::function<void(int, int, int)> callback);
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+// int button, int action, int mods
+void addClickListener(std::function<void(int, int, int)> callback);
+
+
+void setupInput(GLFWwindow* window);
+
 
 
 #endif // INPUT_HPP

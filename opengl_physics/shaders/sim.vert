@@ -80,11 +80,14 @@ void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	vec3 normal = quat_rotate_vector(baseNormal / 2, inTurn);
 	//vec3 normal = baseNormal / 2;
 	
+	vec3 neighPos = texelFetch(allVerts3D, neighborIdx * 3).xyz;
 	vec4 neighTurn = texelFetch(allVerts4D, neighborIdx);
+	vec3 neighVel = texelFetch(allVerts3D, neighborIdx * 3 + 1).xyz;
+	vec3 neighAngVel = texelFetch(allVerts3D, neighborIdx * 3 + 2).xyz;
+	
 	vec3 neighborNormal = quat_rotate_vector(-baseNormal / 2, neighTurn);
 	//vec3 neighborNormal = -baseNormal / 2;
 	
-	vec3 neighPos = texelFetch(allVerts3D, neighborIdx * 3).xyz;
 	vec3 offset = (neighPos + neighborNormal) - (inPos + normal);
 	offsets += offset;
 	vec3 angOffset = cross(normal, offset);
@@ -98,8 +101,6 @@ void checkNeighbor(int neighborIdx, vec3 baseNormal) {
 	
 	
 	++neighborAmount;
-	vec3 neighVel = texelFetch(allVerts3D, neighborIdx * 3 + 1).xyz;
-	vec3 neighAngVel = texelFetch(allVerts3D, neighborIdx * 3 + 2).xyz;
 	
 	neighVels += neighVel + cross(neighAngVel, neighborNormal) - cross(inAngVel, normal);
 	neighAngVels += neighAngVel;

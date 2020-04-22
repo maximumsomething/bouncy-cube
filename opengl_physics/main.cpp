@@ -18,12 +18,6 @@
 #include "voxels.hpp"
 
 
-struct {
-	GLFWwindow* window;
-	int width = 800;
-	int height = 600;
-} windowData;
-
 #ifndef __APPLE__
 #define DEBUG_OUTPUT_SUPPORTED
 #endif
@@ -355,8 +349,8 @@ int main(int argc, char** argv) {
 		windowData.width = width; windowData.height = height;
 		glViewport(0, 0, width, height);
 	});
-	
-	glfwSetKeyCallback(window, key_callback);
+		
+	setupInput(window);
 	
 	addKeyListener(GLFW_KEY_ESCAPE, [window](int scancode, int action, int mods) {
 		 glfwSetWindowShouldClose(window, true);
