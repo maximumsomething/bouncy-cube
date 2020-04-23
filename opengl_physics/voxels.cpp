@@ -17,8 +17,8 @@ public:
 	arrayND<bool, 3> storage;
 	
 	// Every vertex has index of up to 6 connected vertices
-	struct VertData {
-		VertData() {
+	struct CubeData {
+		CubeData() {
 			for (auto& i : neighbors) {
 				i = -1;
 			}
@@ -27,22 +27,34 @@ public:
 		// Order: -x, -y, -z, +x, +y, +z
 		int32_t neighbors[6];
 	};
-	std::vector<glm::vec3> vertsPos;
-	std::vector<VertData> vertsData;
-	std::vector<uint32_t> edgeIndices;
+	struct VertNeighbors {
+		// Order: mmm, mmp, mpm, mpp, pmm, pmp, ppm, ppp
+		int32_t neighbors[8];
+		VertNeighbors() {
+			for (auto& i : neighbors) {
+				i = -1;
+			}
+		};
+	};
+	
+	std::vector<glm::vec3> cubesPos;
+	std::vector<CubeData> cubesData;
+	//std::vector<uint32_t> edgeIndices;
+	std::vector<VertNeighbors> vertsNeighbors;
+	std::vector<uint32_t> faceIndices;
 	
 	VoxelStorage(arrayND<bool, 3> storage) : storage(storage) {
 		
-		setVerts();
-		edgeIndices = getEBO();
+		setCubes();
+		//edgeIndices = getEBO();
 		
 	}
 	
 	// Every vert is guaranteed to be either a positive x, y, or z in front of the previous vertex
 private:
-	void setVerts() {
-		vertsPos.clear();
-		vertsData.clear();
+	void setCubes() {
+		cubesPos.clear();
+		cubesData.clear();
 		
 		// Contains the indices of the vertices in toReturn
 		arrayND<int32_t, 3> indexMap(storage.sizes, -1);
@@ -50,10 +62,10 @@ private:
 		for (int i = 0; i < storage.total(); ++i) {
 			if (storage.linear()[i]) {
 				auto coord = storage.ind2coord(i);
-				vertsPos.push_back(glm::vec3(coord[0], coord[1], coord[2]));
-				vertsData.emplace_back();
+				cubesPos.push_back(glm::vec3(coord[0], coord[1], coord[2]));
+				cubesData.emplace_back();
 				
-				indexMap.linear()[i] = vertsData.size() - 1;
+				indexMap.linear()[i] = cubesData.size() - 1;
 				
 				// Get the neighbors above, but not below
 				for (int j = 0; j < 3; ++j) {
@@ -63,19 +75,86 @@ private:
 						neighborCoord[j] -= 1;
 						if (storage[neighborCoord]) {
 							assert(indexMap[neighborCoord] >= 0);
-							vertsData.back().neighbors[j] = indexMap[neighborCoord];
-							vertsData[indexMap[neighborCoord]].neighbors[j + 3] = vertsData.size() - 1;
+							cubesData.back().neighbors[j] = indexMap[neighborCoord];
+							cubesData[indexMap[neighborCoord]].neighbors[j + 3] = cubesData.size() - 1;
 						}
 					}
 				}
 			}
 		}
+		
+		arrayND<int32_t, 3> cornerIndexMap(
+		{ storage.sizes[0] + 1, storage.sizes[1] + 1, storage.sizes[2] + 1 }, -1);
+		
+		// Get vertices between cubes
+		for (int z = 0; z <= storage.sizes[2]; ++z)
+		for (int y = 0; y <= storage.sizes[1]; ++y)
+		for (int x = 0; x <= storage.sizes[0]; ++x) {
+			
+			VertNeighbors thisVert;
+			bool allNeighExists = true, allNeighAir = true;
+			
+			for (unsigned int i = 0; i < 8; ++i) {
+				int cubeX = x - !(i & 1);
+				int cubeY = y - !(i & 2);
+				int cubeZ = z - !(i & 4);
+				
+				if (cubeX >= 0 && cubeY >= 0 && cubeZ >= 0
+					&& cubeX < storage.sizes[0] && cubeY < storage.sizes[1] && cubeZ < storage.sizes[2]) {
+					thisVert.neighbors[i] = indexMap[cubeX][cubeY][cubeZ];
+					
+				}
+				allNeighExists = allNeighExists && thisVert.neighbors[i] != -1;
+				allNeighAir = allNeighAir && thisVert.neighbors[i] == -1;
+			}
+			
+			if (!allNeighExists && !allNeighAir) {
+				vertsNeighbors.push_back(thisVert);
+				cornerIndexMap[x][y][z] = vertsNeighbors.size() - 1;
+			}
+		}
+		
+		// Make faces from those vertices
+		for (int i = 0; i < cubesData.size(); ++i) {
+			arrayND<int32_t, 3>::sizesT cubePos = {
+				(size_t) cubesPos[i].x,  (size_t) cubesPos[i].y, (size_t) cubesPos[i].z
+			};
+			for (int j = 0; j < 6; ++j) {
+				if (cubesData[i].neighbors[j] == -1) {
+					arrayND<int32_t, 3>::sizesT cornerPos = cubePos;
+					cornerPos[j % 3] += j / 3;
+					/*
+					// Draw two triangles to make a face
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					cornerPos[(j + 1) % 3] += 1;
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					cornerPos[(j + 1) % 3] -= 1;
+					cornerPos[(j + 2) % 3] += 1;
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					cornerPos[(j + 1) % 3] += 1;
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					cornerPos[(j + 2) % 3] -= 1;
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					 */
+					// Draw a quad which gets processed by geometry shader
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					cornerPos[(j + 1) % 3] += 1;
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					cornerPos[(j + 2) % 3] += 1;
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					cornerPos[(j + 1) % 3] -= 1;
+					faceIndices.push_back(cornerIndexMap[cornerPos]);
+				}
+			}
+		}
 	}
+	
 	
 	std::vector<uint32_t> getEBO() {
 		std::vector<uint32_t> EBO;
-		for (uint32_t i = 0; i < vertsData.size(); ++i) {
-			for (auto j : vertsData[i].neighbors) {
+		for (uint32_t i = 0; i < cubesData.size(); ++i) {
+			for (auto j : cubesData[i].neighbors) {
 				if (j == -1) {
 					EBO.push_back(i);
 					break;
@@ -103,9 +182,12 @@ arrayND<bool, 3> genSphere(float radius) {
 }
 
 
-constexpr float RADIUS = 50;
+constexpr float RADIUS = 10;
 constexpr int PHYS_STEPS_PER_FRAME = 2;
 constexpr int SLOWDOWN_FACTOR = 1;
+
+constexpr bool DRAW_CUBES = false;
+constexpr bool DRAW_VECTORS = false;
 
 
 const GLchar * physOutputs[] = {
@@ -124,7 +206,7 @@ GLuint cubeTexture = loadTexture("rubber.jpg");
 VoxelStorage toRender{genSphere(RADIUS)};
 
 // PhysVBO is read and written by the physics code. DebugFeedbackVBO is written to but not read by the physics code, and DataVBO is read but not written to by the physics code. All three are read by the drawing code.
-GLuint voxelRenderVAO, vectorRenderVAO, physVAO, debugFeedbackVBO, dataVBO, EBO, physBufTex3D, physBufTex4D;
+GLuint voxelRenderVAO, vectorRenderVAO, physVAO, debugFeedbackVBO, dataVBO, vertNeighborVBO, EBO, physBufTex3D, physBufTex4D;
 
 struct PhysData3D {
 	glm::vec3 pos = glm::zero<glm::vec3>();
@@ -148,16 +230,11 @@ PhysBuffers physBuf1, physBuf2;
 
 size_t physVBO3DSize, physVBO4DSize, feedbackVBOSize;
 
-bool paused	= false, doingStep = false;
-	
+bool paused	= true, doingStep = false;
+
 
 
 VoxelRendererImpl() :
-voxelRenderShader(linkShaders({
-	loadShader("voxels.vert", GL_VERTEX_SHADER),
-	loadShader("voxels.frag", GL_FRAGMENT_SHADER),
-	loadShader("voxels.geom", GL_GEOMETRY_SHADER)
-})),
 vectorRenderShader(linkShaders({
 	loadShader("vectors.vert", GL_VERTEX_SHADER),
 	loadShader("vectors.frag", GL_FRAGMENT_SHADER),
@@ -167,59 +244,95 @@ physicsShader(linkShaders({
 	loadShader("sim.vert", GL_VERTEX_SHADER)}, [] (GLuint toBeLinked) {
 	glTransformFeedbackVaryings(toBeLinked, sizeof(physOutputs) / sizeof(physOutputs[0]), physOutputs, GL_INTERLEAVED_ATTRIBS);
 })) {
+	if (DRAW_CUBES) {
+		voxelRenderShader = linkShaders({
+			loadShader("voxels.vert", GL_VERTEX_SHADER),
+			loadShader("voxels.frag", GL_FRAGMENT_SHADER),
+			loadShader("voxels.geom", GL_GEOMETRY_SHADER)
+		});
+	}
+	else {
+		voxelRenderShader = linkShaders({
+			loadShader("stretchyVoxels.vert", GL_VERTEX_SHADER),
+			loadShader("voxels.frag", GL_FRAGMENT_SHADER),
+			loadShader("stretchyVoxels.geom", GL_GEOMETRY_SHADER)
+		});
+	}
 	
 	glGenVertexArrays(3, &voxelRenderVAO);
 	glBindVertexArray(voxelRenderVAO);
 	
 	// Set the initial positions
-	std::vector<PhysData3D> initPhysData(toRender.vertsPos.size());
-	std::vector<PhysData4D> initTurn(toRender.vertsPos.size());
-	for (unsigned i = 0; i < toRender.vertsPos.size(); ++i) {
-		initPhysData[i].pos = toRender.vertsPos[i];
+	std::vector<PhysData3D> initPhysData(toRender.cubesPos.size());
+	std::vector<PhysData4D> initTurn(toRender.cubesPos.size());
+	for (unsigned i = 0; i < toRender.cubesPos.size(); ++i) {
+		initPhysData[i].pos = toRender.cubesPos[i];
 		//if (i < 10) initPhysData[i].vel = glm::vec3(1, 1, 1);
 		//if (i > toRender.vertsPos.size() - 51) initPhysData[i].vel = glm::vec3(100, 0, 0);
 		//if (i < 50) initPhysData[i].vel = glm::vec3(-100, 0, 0);
 		//initPhysData[i].angVel = glm::vec3(0, 30, 0);
 	}
 	
-	physVBO3DSize = toRender.vertsPos.size() * sizeof(PhysData3D);
-	physVBO4DSize = toRender.vertsPos.size() * sizeof(PhysData4D);
-	feedbackVBOSize = toRender.vertsPos.size() * sizeof(float);
+	physVBO3DSize = toRender.cubesPos.size() * sizeof(PhysData3D);
+	physVBO4DSize = toRender.cubesPos.size() * sizeof(PhysData4D);
+	feedbackVBOSize = toRender.cubesPos.size() * sizeof(float);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
 	glBufferData(GL_ARRAY_BUFFER, physVBO3DSize, initPhysData.data(), GL_STREAM_COPY);
 	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data4D);
 	glBufferData(GL_ARRAY_BUFFER, physVBO4DSize, initTurn.data(), GL_STREAM_COPY);
 	
-	setDrawAttrs();
+	if (DRAW_CUBES) setPosTurnDrawAttrs();
 	
 	// Generate the non-physics buffers
-	glGenBuffers(3, &debugFeedbackVBO);
+	glGenBuffers(4, &debugFeedbackVBO);
 
-	glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
-	float* clearData = (float *) calloc(1, feedbackVBOSize);
-	glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, clearData, GL_STREAM_COPY);
-	free(clearData);
-	// draw debug feedback
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
-	glEnableVertexAttribArray(2);
+	if (DRAW_CUBES) {
+		glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
+		float* clearData = (float *) calloc(1, feedbackVBOSize);
+		glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, clearData, GL_STREAM_COPY);
+		free(clearData);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
-	glBufferData(GL_ARRAY_BUFFER, toRender.vertsData.size() * sizeof(VoxelStorage::VertData), toRender.vertsData.data(), GL_STATIC_DRAW);
-	setVertDataAttrs(voxelRenderShader);
+		// draw debug feedback
+		glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
+		glEnableVertexAttribArray(2);
+		// neighbor data
+		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
+		glBufferData(GL_ARRAY_BUFFER, toRender.cubesData.size() * sizeof(VoxelStorage::CubeData), toRender.cubesData.data(), GL_STATIC_DRAW);
+		setVertDataAttrs(voxelRenderShader);
+	}
+	else {
+		glBindBuffer(GL_ARRAY_BUFFER, vertNeighborVBO);
+		glBufferData(GL_ARRAY_BUFFER, toRender.vertsNeighbors.size() * sizeof(VoxelStorage::VertNeighbors), toRender.vertsNeighbors.data(), GL_STATIC_DRAW);
+		
+		glVertexAttribIPointer(0, 4, GL_INT, sizeof(int32_t) * 4, (void *) 0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribIPointer(1, 4, GL_INT, sizeof(int32_t) * 4, (void *) (sizeof(int32_t) * 4));
+		glEnableVertexAttribArray(1);
+	}
+	
+	glUseProgram(voxelRenderShader);
+	glUniform1i(glGetUniformLocation(voxelRenderShader, "cubeTexture"), 0);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, toRender.edgeIndices.size() * sizeof(uint32_t), toRender.edgeIndices.data(), GL_STATIC_DRAW);
+	if (DRAW_CUBES) {
+		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, toRender.edgeIndices.size() * sizeof(uint32_t), toRender.edgeIndices.data(), GL_STATIC_DRAW);
+	}
+	else {
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, toRender.faceIndices.size() * sizeof(uint32_t), toRender.faceIndices.data(), GL_STATIC_DRAW);
+	}
 	
-	// Drawing debug vectors
-	glBindVertexArray(vectorRenderVAO);
-	setDrawAttrs();
-	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, vel));
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, angVel));
-	glEnableVertexAttribArray(3);
+	if (DRAW_VECTORS) {
+		// Drawing debug vectors
+		glBindVertexArray(vectorRenderVAO);
+		setPosTurnDrawAttrs();
+		glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, vel));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, angVel));
+		glEnableVertexAttribArray(3);
+	}
 
 	// Physics renderer
 	glBindVertexArray(physVAO);
@@ -231,15 +344,12 @@ physicsShader(linkShaders({
 	
 	
 	setVertDataAttrs(physicsShader);
-	glUniform1i(glGetUniformLocation(physicsShader, "allVerts"), 0);
 	
 	glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
 	
 	glGenTextures(2, &physBufTex3D);
 	
-	glUniform1i(glGetUniformLocation(physicsShader, "allVerts3D"), 0);
-	glUniform1i(glGetUniformLocation(physicsShader, "allVerts4D"), 1);
-	
+	initBufferTextues(physicsShader);
 
 	addKeyListener(GLFW_KEY_P, [this](int scancode, int action, int mods) {
 		if (action == GLFW_PRESS) paused = !paused;
@@ -251,8 +361,22 @@ physicsShader(linkShaders({
 		}
 	});
 }
+	
+void initBufferTextues(GLuint shader) {
+	glUniform1i(glGetUniformLocation(shader, "allVerts3D"), 1);
+	glUniform1i(glGetUniformLocation(shader, "allVerts4D"), 2);
+}
+void bindBufferTextures(PhysBuffers VBOs) {
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_BUFFER, physBufTex3D);
+	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, VBOs.data3D);
+	
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_BUFFER, physBufTex4D);
+	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, VBOs.data4D);
+}
 
-void setDrawAttrs() {
+void setPosTurnDrawAttrs() {
 	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, pos));
 	glEnableVertexAttribArray(0);
@@ -266,10 +390,10 @@ void setVertDataAttrs(GLuint shader) {
 	glUseProgram(shader);
 	
 	GLint neighborsM = glGetAttribLocation(shader, "neighborsM");
-	glVertexAttribIPointer(neighborsM, 3, GL_INT, sizeof(VoxelStorage::VertData), 0);
+	glVertexAttribIPointer(neighborsM, 3, GL_INT, sizeof(VoxelStorage::CubeData), 0);
 	glEnableVertexAttribArray(neighborsM);
 	GLint neighborsP = glGetAttribLocation(shader, "neighborsP");
-	glVertexAttribIPointer(neighborsP, 3, GL_INT, sizeof(VoxelStorage::VertData), (void *) offsetof(VoxelStorage::VertData, neighbors[3]));
+	glVertexAttribIPointer(neighborsP, 3, GL_INT, sizeof(VoxelStorage::CubeData), (void *) offsetof(VoxelStorage::CubeData, neighbors[3]));
 	glEnableVertexAttribArray(neighborsP);
 	glCheckError();
 }
@@ -299,17 +423,10 @@ void physicsStep(PhysBuffers inVBOs, PhysBuffers outVBOs) {
 	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, debugFeedbackVBO);
 	
 	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_BUFFER, physBufTex3D);
-	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, inVBOs.data3D);
-	
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_BUFFER, physBufTex4D);
-	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, inVBOs.data4D);
-	
+	bindBufferTextures(inVBOs);
 	
 	glBeginTransformFeedback(GL_POINTS);
-	glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
+	glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
 	glEndTransformFeedback();
 	//glFlush();
 }
@@ -355,7 +472,7 @@ void render(glm::mat4 view, glm::mat4 projection) override {
 	glEnable(GL_DEPTH_TEST);
 	
 	drawVoxels(totalTransform);
-	//drawVectors(totalTransform);
+	if (DRAW_VECTORS) drawVectors(totalTransform);
 	
 	//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	
@@ -370,20 +487,25 @@ void drawVoxels(glm::mat4 transform) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, cubeTexture);
 	
-	//glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	if (DRAW_CUBES) {
 	
-	// Draw just the outside voxels
-	glDrawElements(GL_POINTS, toRender.edgeIndices.size(), GL_UNSIGNED_INT, nullptr);
-	
-	// Draw everything
-	//glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
+		// Draw just the outside voxels
+		//glDrawElements(GL_POINTS, toRender.edgeIndices.size(), GL_UNSIGNED_INT, nullptr);
+		
+		// Draw everything
+		glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
+	}
+	else {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glDrawElements(GL_LINES_ADJACENCY, toRender.faceIndices.size(), GL_UNSIGNED_INT, nullptr);
+	}
 }
 void drawVectors(glm::mat4 transform) {
 	glBindVertexArray(vectorRenderVAO);
 	glUseProgram(vectorRenderShader);
 	glUniformMatrix4fv(glGetUniformLocation(vectorRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 	
-	glDrawArrays(GL_POINTS, 0, toRender.vertsPos.size());
+	glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
 }
 /*
 void mouseDragStart() {
