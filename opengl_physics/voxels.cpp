@@ -181,7 +181,7 @@ arrayND<bool, 3> genSphere(float radius) {
 }
 
 
-constexpr float RADIUS = 0.5;
+constexpr float RADIUS = 1;
 constexpr int PHYS_STEPS_PER_FRAME = 2;
 constexpr int SLOWDOWN_FACTOR = 1;
 
@@ -229,7 +229,7 @@ PhysBuffers physBuf1, physBuf2;
 
 size_t physVBO3DSize, physVBO4DSize, feedbackVBOSize;
 
-bool paused = true, doingStep = false;
+bool paused = false, doingStep = false;
 
 
 
@@ -304,9 +304,9 @@ physicsShader(linkShaders({
 		glBindBuffer(GL_ARRAY_BUFFER, vertNeighborVBO);
 		glBufferData(GL_ARRAY_BUFFER, toRender.vertsNeighbors.size() * sizeof(VoxelStorage::VertNeighbors), toRender.vertsNeighbors.data(), GL_STATIC_DRAW);
 		
-		glVertexAttribIPointer(0, 4, GL_INT, sizeof(int32_t) * 4, (void *) 0);
+		glVertexAttribIPointer(0, 4, GL_INT, sizeof(int32_t) * 8, (void *) 0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribIPointer(1, 4, GL_INT, sizeof(int32_t) * 4, (void *) (sizeof(int32_t) * 4));
+		glVertexAttribIPointer(1, 4, GL_INT, sizeof(int32_t) * 8, (void *) (sizeof(int32_t) * 4));
 		glEnableVertexAttribArray(1);
 	}
 	
