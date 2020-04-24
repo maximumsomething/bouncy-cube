@@ -102,7 +102,6 @@ private:
 				if (cubeX >= 0 && cubeY >= 0 && cubeZ >= 0
 					&& cubeX < storage.sizes[0] && cubeY < storage.sizes[1] && cubeZ < storage.sizes[2]) {
 					thisVert.neighbors[i] = indexMap[cubeX][cubeY][cubeZ];
-					
 				}
 				allNeighExists = allNeighExists && thisVert.neighbors[i] != -1;
 				allNeighAir = allNeighAir && thisVert.neighbors[i] == -1;
@@ -182,7 +181,7 @@ arrayND<bool, 3> genSphere(float radius) {
 }
 
 
-constexpr float RADIUS = 10;
+constexpr float RADIUS = 0.5;
 constexpr int PHYS_STEPS_PER_FRAME = 2;
 constexpr int SLOWDOWN_FACTOR = 1;
 
@@ -230,7 +229,7 @@ PhysBuffers physBuf1, physBuf2;
 
 size_t physVBO3DSize, physVBO4DSize, feedbackVBOSize;
 
-bool paused	= true, doingStep = false;
+bool paused = true, doingStep = false;
 
 
 
@@ -312,7 +311,7 @@ physicsShader(linkShaders({
 	}
 	
 	glUseProgram(voxelRenderShader);
-	glUniform1i(glGetUniformLocation(voxelRenderShader, "cubeTexture"), 0);
+	glUniform1i(glGetUniformLocation(voxelRenderShader, "cubeTexture"), 2);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
@@ -363,15 +362,15 @@ physicsShader(linkShaders({
 }
 	
 void initBufferTextues(GLuint shader) {
-	glUniform1i(glGetUniformLocation(shader, "allVerts3D"), 1);
-	glUniform1i(glGetUniformLocation(shader, "allVerts4D"), 2);
+	glUniform1i(glGetUniformLocation(shader, "allVerts3D"), 0);
+	glUniform1i(glGetUniformLocation(shader, "allVerts4D"), 1);
 }
 void bindBufferTextures(PhysBuffers VBOs) {
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_BUFFER, physBufTex3D);
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, VBOs.data3D);
 	
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_BUFFER, physBufTex4D);
 	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, VBOs.data4D);
 }
@@ -484,7 +483,7 @@ void drawVoxels(glm::mat4 transform) {
 	glUseProgram(voxelRenderShader);
 	glUniformMatrix4fv(glGetUniformLocation(voxelRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 
-	glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, cubeTexture);
 	
 	if (DRAW_CUBES) {

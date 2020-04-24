@@ -97,6 +97,7 @@ public:
 		size_t accumulatedStride = 1;
 		size_t idx = 0;
 		for (int j = 0; j < n; ++j) {
+			if (coords[j] >= sizes[j]) throw std::out_of_range("arrayND coord2ind");
 			idx += coords[j] * accumulatedStride;
 			accumulatedStride *= this->sizes[j];
 		}

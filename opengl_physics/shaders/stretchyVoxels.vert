@@ -16,24 +16,29 @@ uniform samplerBuffer allVerts4D;
 vec3 totalPositions = vec3(0, 0, 0);
 float numNeighbors = 0;
 
+vec3 beep;
+
 void getNeighborCorner(int idx, vec3 pointing) {
 	if (idx == -1) return;
-	vec3 pos = texelFetch(allVerts3D, idx * 3).xyz;
+	if (numNeighbors > 0) beep = pointing;
+	vec3 pos = vec3(0, 0, 0);//texelFetch(allVerts3D, idx * 3).xyz;
 	vec4 turn = texelFetch(allVerts4D, idx);
-	totalPositions += pos + quat_rotate_vector(pointing, turn);
+	totalPositions += pos + pointing * 0.5;//quat_rotate_vector(pointing / 2, turn);
 	++numNeighbors;
 }
 
 void main() {
-	getNeighborCorner(neighborsM.x, vec3(-1, -1, -1));
-	getNeighborCorner(neighborsM.y, vec3(-1, -1,  1));
-	getNeighborCorner(neighborsM.z, vec3(-1,  1, -1));
-	getNeighborCorner(neighborsM.w, vec3(-1,  1,  1));
-	getNeighborCorner(neighborsP.x, vec3( 1, -1, -1));
-	getNeighborCorner(neighborsP.y, vec3( 1, -1,  1));
-	getNeighborCorner(neighborsP.z, vec3( 1,  1, -1));
-	getNeighborCorner(neighborsP.w, vec3( 1,  1,  1));
+	getNeighborCorner(neighborsM.x, vec3( 1,  1,  1));
+	getNeighborCorner(neighborsM.y, vec3(-1,  1,  1));
+	getNeighborCorner(neighborsM.z, vec3( 1, -1,  1));
+	getNeighborCorner(neighborsM.w, vec3(-1, -1,  1));
+	getNeighborCorner(neighborsP.x, vec3( 1,  1, -1));
+	getNeighborCorner(neighborsP.y, vec3(-1,  1, -1));
+	getNeighborCorner(neighborsP.z, vec3( 1, -1, -1));
+	getNeighborCorner(neighborsP.w, vec3(-1, -1, -1));
 	
 	gl_Position = transform * vec4(totalPositions / numNeighbors, 1.0);
+	if (numNeighbors != 1) gl_Position = transform * vec4(numNeighbors, numNeighbors, numNeighbors, 1);
+	//if (totalPositions == vec3(0, 0, 0) && numNeighbors > 0) gl_Position = transform * vec4(10, 10, 10, 1);
 }
 

@@ -39,5 +39,7 @@ DISTFILES += \
     opengl_physics/shaders/sim.vert \
     opengl_physics/shaders/skybox.vert \
     opengl_physics/shaders/vectors.vert \
-    opengl_physics/shaders/voxels.vert
+    opengl_physics/shaders/voxels.vert \
+    opengl_physics/shaders/stretchyVoxels.vert \
+    opengl_physics/shaders/stretchyVoxels.geom \
 
