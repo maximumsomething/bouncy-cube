@@ -120,6 +120,10 @@ void main() {
 		neighVels /= neighborAmount;
 		neighAngVels /= neighborAmount;
 	}
+	
+	// slightly less basic ass collision checking
+	if (inPos.y < floorY) offsets.y += (floorY - inPos.y);
+	
 	outVel = mix(inVel, neighVels, dampingFactor * neighborAmount);
 	outVel = outVel + (spring(offsets) / cubeMass + vec3(0, -gravity, 0)) * timeDelta;
 	
@@ -128,7 +132,7 @@ void main() {
 	//outAngVel = vec3(0, 0, 0);
 	
 	// basic ass collision checking
-	if (inPos.y < floorY) outVel.y = max(outVel.y, 0);
+	//if (inPos.y < floorY) outVel.y = max(outVel.y, 0);
 	
 	outPos = inPos + outVel * timeDelta;
 	//outTurn = vec3(0, 0, 0);

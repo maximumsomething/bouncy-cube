@@ -10,17 +10,20 @@ uniform mat4 transform;
 
 uniform samplerBuffer allVerts3D;
 uniform samplerBuffer allVerts4D;
+uniform samplerBuffer debugFeedback;
+
+out float feedback;
 
 
 vec3 totalPositions = vec3(0, 0, 0);
 float numNeighbors = 0;
-
-vec3 beep;
+float feedbackAccum = 0;
 
 void getNeighborCorner(int idx, vec3 pointing) {
 	if (idx == -1) return;
 	vec3 pos = texelFetch(allVerts3D, idx * 3).xyz;
 	vec4 turn = texelFetch(allVerts4D, idx);
+	feedbackAccum += texelFetch(debugFeedback, idx).x;
 	totalPositions += pos + /*pointing * 0.5*/quat_rotate_vector(pointing * 0.5, turn);
 	++numNeighbors;
 }
@@ -36,5 +39,6 @@ void main() {
 	getNeighborCorner(neighborsP.w, vec3(-1, -1, -1));
 	
 	gl_Position = transform * vec4(totalPositions / numNeighbors, 1.0);
+	feedback = feedbackAccum / numNeighbors;
 }
 

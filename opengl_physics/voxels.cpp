@@ -205,7 +205,7 @@ GLuint cubeTexture = loadTexture("rubber.jpg");
 VoxelStorage toRender{genSphere(RADIUS)};
 
 // PhysVBO is read and written by the physics code. DebugFeedbackVBO is written to but not read by the physics code, and DataVBO is read but not written to by the physics code. All three are read by the drawing code.
-GLuint voxelRenderVAO, vectorRenderVAO, physVAO, debugFeedbackVBO, dataVBO, vertNeighborVBO, EBO, physBufTex3D, physBufTex4D;
+	GLuint voxelRenderVAO, vectorRenderVAO, physVAO, debugFeedbackVBO, dataVBO, vertNeighborVBO, EBO, physBufTex3D, physBufTex4D, feedbackBufTex;
 
 struct PhysData3D {
 	glm::vec3 pos = glm::zero<glm::vec3>();
@@ -312,6 +312,8 @@ physicsShader(linkShaders({
 		glEnableVertexAttribArray(1);
 
 		initBufferTextures(voxelRenderShader);
+		
+		glUniform1i(glGetUniformLocation(voxelRenderShader, "debugFeedback"), 3);
 	}
 	
 	glUseProgram(voxelRenderShader);
@@ -350,7 +352,7 @@ physicsShader(linkShaders({
 	
 	glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
 	
-	glGenTextures(2, &physBufTex3D);
+	glGenTextures(3, &physBufTex3D);
 	initBufferTextures(physicsShader);
 
 	addKeyListener(GLFW_KEY_P, [this](int scancode, int action, int mods) {
@@ -500,6 +502,10 @@ void drawVoxels(glm::mat4 transform) {
 	}
 	else {
 		bindBufferTextures(physBuf1);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_BUFFER, feedbackBufTex);
+		glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, debugFeedbackVBO);
+		
 		glDrawElements(GL_LINES_ADJACENCY, toRender.faceIndices.size(), GL_UNSIGNED_INT, nullptr);
 	}
 }
