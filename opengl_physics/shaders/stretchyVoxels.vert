@@ -12,7 +12,6 @@ uniform samplerBuffer allVerts3D;
 uniform samplerBuffer allVerts4D;
 
 
-
 vec3 totalPositions = vec3(0, 0, 0);
 float numNeighbors = 0;
 
@@ -22,7 +21,7 @@ void getNeighborCorner(int idx, vec3 pointing) {
 	if (idx == -1) return;
 	vec3 pos = texelFetch(allVerts3D, idx * 3).xyz;
 	vec4 turn = texelFetch(allVerts4D, idx);
-	totalPositions += pos + quat_rotate_vector(pointing / 2, turn);
+	totalPositions += pos + /*pointing * 0.5*/quat_rotate_vector(pointing * 0.5, turn);
 	++numNeighbors;
 }
 

@@ -181,7 +181,7 @@ arrayND<bool, 3> genSphere(float radius) {
 }
 
 
-constexpr float RADIUS = 1;
+constexpr float RADIUS = 50;
 constexpr int PHYS_STEPS_PER_FRAME = 2;
 constexpr int SLOWDOWN_FACTOR = 1;
 
@@ -229,7 +229,7 @@ PhysBuffers physBuf1, physBuf2;
 
 size_t physVBO3DSize, physVBO4DSize, feedbackVBOSize;
 
-bool paused = false, doingStep = false;
+bool paused = true, doingStep = false;
 
 
 
@@ -286,18 +286,20 @@ physicsShader(linkShaders({
 	// Generate the non-physics buffers
 	glGenBuffers(4, &debugFeedbackVBO);
 
+
+	glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
+	float* clearData = (float *) calloc(1, feedbackVBOSize);
+	glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, clearData, GL_STREAM_COPY);
+	free(clearData);
 	if (DRAW_CUBES) {
-		glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
-		float* clearData = (float *) calloc(1, feedbackVBOSize);
-		glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, clearData, GL_STREAM_COPY);
-		free(clearData);
-	
 		// draw debug feedback
 		glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
 		glEnableVertexAttribArray(2);
-		// neighbor data
-		glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
-		glBufferData(GL_ARRAY_BUFFER, toRender.cubesData.size() * sizeof(VoxelStorage::CubeData), toRender.cubesData.data(), GL_STATIC_DRAW);
+	}
+	// neighbor data
+	glBindBuffer(GL_ARRAY_BUFFER, dataVBO);
+	glBufferData(GL_ARRAY_BUFFER, toRender.cubesData.size() * sizeof(VoxelStorage::CubeData), toRender.cubesData.data(), GL_STATIC_DRAW);
+	if (DRAW_CUBES) {
 		setVertDataAttrs(voxelRenderShader);
 	}
 	else {
@@ -308,6 +310,8 @@ physicsShader(linkShaders({
 		glEnableVertexAttribArray(0);
 		glVertexAttribIPointer(1, 4, GL_INT, sizeof(int32_t) * 8, (void *) (sizeof(int32_t) * 4));
 		glEnableVertexAttribArray(1);
+
+		initBufferTextures(voxelRenderShader);
 	}
 	
 	glUseProgram(voxelRenderShader);
@@ -347,8 +351,7 @@ physicsShader(linkShaders({
 	glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
 	
 	glGenTextures(2, &physBufTex3D);
-	
-	initBufferTextues(physicsShader);
+	initBufferTextures(physicsShader);
 
 	addKeyListener(GLFW_KEY_P, [this](int scancode, int action, int mods) {
 		if (action == GLFW_PRESS) paused = !paused;
@@ -361,7 +364,8 @@ physicsShader(linkShaders({
 	});
 }
 	
-void initBufferTextues(GLuint shader) {
+void initBufferTextures(GLuint shader) {
+	glUseProgram(shader);
 	glUniform1i(glGetUniformLocation(shader, "allVerts3D"), 0);
 	glUniform1i(glGetUniformLocation(shader, "allVerts4D"), 1);
 }
@@ -495,7 +499,7 @@ void drawVoxels(glm::mat4 transform) {
 		glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
 	}
 	else {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		bindBufferTextures(physBuf1);
 		glDrawElements(GL_LINES_ADJACENCY, toRender.faceIndices.size(), GL_UNSIGNED_INT, nullptr);
 	}
 }

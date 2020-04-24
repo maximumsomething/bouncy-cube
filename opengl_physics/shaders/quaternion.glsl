@@ -18,6 +18,7 @@ vec4 quat_mul(vec4 q1, vec4 q2) {
 
 // Vector rotation with a quaternion
 vec3 quat_rotate_vector(vec3 v, vec4 r) {
+	//r = normalize(r);
 	//vec4 r_c = r * vec4(-1, -1, -1, 1);
 	//return quat_mul(r, quat_mul(vec4(v, 0), r_c)).xyz;
 	return v + 2.0 * cross(r.xyz, cross(r.xyz, v) + r.w * v);

@@ -4,8 +4,17 @@
 layout (lines_adjacency) in;
 layout (triangle_strip, max_vertices = 4) out;
 
+//in float feedback[];
+
 out vec2 texCoord;
 out vec4 vertColor;
+
+/*void doVertex(int i, vec2 coord) {
+	texCoord = coord;
+	vertColor = vec4(feedback[])
+	gl_Position = gl_in[0].gl_Position;
+	EmitVertex();
+}*/
 
 void main() {
 	vertColor = vec4(0, 0, 0, 0);
