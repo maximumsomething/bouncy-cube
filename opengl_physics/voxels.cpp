@@ -181,7 +181,7 @@ arrayND<bool, 3> genSphere(float radius) {
 }
 
 
-constexpr float RADIUS = 50;
+constexpr float RADIUS = 10;
 constexpr int PHYS_STEPS_PER_FRAME = 2;
 constexpr int SLOWDOWN_FACTOR = 1;
 
@@ -364,6 +364,13 @@ physicsShader(linkShaders({
 			paused = true;
 		}
 	});
+	
+	addClickListener([this](int button, int action, int mods) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (action == GLFW_PRESS) getClickPos();
+			else if (action == GLFW_RELEASE) mouseDragEnd();
+		}
+	});
 }
 	
 void initBufferTextures(GLuint shader) {
@@ -463,6 +470,8 @@ void doPhysics() {
 	glDisable(GL_RASTERIZER_DISCARD);
 }
 
+	glm::mat4 prevTransform{1.0f};
+	
 void render(glm::mat4 view, glm::mat4 projection) override {
 	
 	doPhysics();
@@ -471,6 +480,7 @@ void render(glm::mat4 view, glm::mat4 projection) override {
 	model = glm::translate(model, glm::vec3(-RADIUS, -RADIUS, -RADIUS*2));
 	
 	auto totalTransform = projection * view * model;
+	prevTransform = totalTransform;
 	
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -516,18 +526,27 @@ void drawVectors(glm::mat4 transform) {
 	
 	glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
 }
-/*
-void mouseDragStart() {
-	double x, y;
-	glfwGetCursorPos(windowData.window, &x, &y);
+
+void getClickPos() {
+	glm::dvec2 unscaled;
+	glfwGetCursorPos(windowData.window, &unscaled.x, &unscaled.y);
+	glm::ivec2 fbSize;
+	glfwGetFramebufferSize(windowData.window, &fbSize.x, &fbSize.y);
+	glm::dvec2 scaledMouse = unscaled * glm::dvec2(fbSize) / glm::dvec2(windowData.width, windowData.height);
 	
-	// Get depth buffer
-	//glReadPixels((int) round(x), (int) round(y), 1, 1,  GL_DEPTH_COMPONENT, )
+	float depth;
+	glReadPixels((int) round(scaledMouse.x), (int) round(fbSize.y - scaledMouse.y), 1, 1,  GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+	
+	glm::vec3 mouseWorld = glm::unProject(glm::vec3(scaledMouse.x, scaledMouse.y, depth), glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, fbSize.x, fbSize.y));
+	std::cout << "Click at screen x:" << unscaled.x << " y:" << unscaled.y << " depth:" << depth << std::endl;
+	std::cout << "Click at world x:" << mouseWorld.x << " y:" << mouseWorld.y << " z:" << mouseWorld.z << std::endl;
+	
+	
 }
 
 void mouseDragEnd() {
 	
-}*/
+}
 	
 };
 
