@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		5013934D244F9C9F00774108 /* input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5013934B244F9C9F00774108 /* input.cpp */; };
+		5036DF18245F057B0004663A /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 5036DF17245F057B0004663A /* libpng16.16.dylib */; };
+		5036DF19245F057B0004663A /* libpng16.16.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 5036DF17245F057B0004663A /* libpng16.16.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		50B5D928244F950000D1867C /* voxels.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50B5D901244F950000D1867C /* voxels.cpp */; };
 		50B5D929244F950000D1867C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 50B5D903244F950000D1867C /* Assets.xcassets */; };
 		50B5D92A244F950000D1867C /* loaders.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50B5D904244F950000D1867C /* loaders.cpp */; };
@@ -28,6 +30,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				50B5D949244F979900D1867C /* libglfw.3.dylib in Embed Libraries */,
+				5036DF19245F057B0004663A /* libpng16.16.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -37,6 +40,7 @@
 /* Begin PBXFileReference section */
 		5013934B244F9C9F00774108 /* input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = input.cpp; sourceTree = "<group>"; };
 		5013934C244F9C9F00774108 /* input.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = input.hpp; sourceTree = "<group>"; };
+		5036DF17245F057B0004663A /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../usr/local/Cellar/libpng/1.6.37/lib/libpng16.16.dylib; sourceTree = "<group>"; };
 		50B5D901244F950000D1867C /* voxels.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = voxels.cpp; sourceTree = "<group>"; };
 		50B5D902244F950000D1867C /* bridge.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = bridge.hpp; sourceTree = "<group>"; };
 		50B5D903244F950000D1867C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -65,6 +69,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				50B5D948244F979900D1867C /* libglfw.3.dylib in Frameworks */,
+				5036DF18245F057B0004663A /* libpng16.16.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,6 +122,7 @@
 		50C95DE42426B1F800F14718 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				5036DF17245F057B0004663A /* libpng16.16.dylib */,
 				50B5D947244F979900D1867C /* libglfw.3.dylib */,
 				50C95DE52426B1F800F14718 /* libglfw.3.dylib */,
 			);
@@ -323,7 +329,10 @@
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl_physics/include\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/opengl_physics/include\"",
+					/usr/local/include,
+				);
 				INFOPLIST_FILE = opengl_physics/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -333,6 +342,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/opengl\\ physics/libs",
 					"$(PROJECT_DIR)/opengl_physics/libs",
+					/usr/local/Cellar/libpng/1.6.37/lib,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "nothingness.opengl-physics";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -347,7 +357,10 @@
 				CODE_SIGN_ENTITLEMENTS = "opengl physics/opengl_physics.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				HEADER_SEARCH_PATHS = "\"$(SRCROOT)/opengl_physics/include\"";
+				HEADER_SEARCH_PATHS = (
+					"\"$(SRCROOT)/opengl_physics/include\"",
+					/usr/local/include,
+				);
 				INFOPLIST_FILE = opengl_physics/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -357,6 +370,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/opengl\\ physics/libs",
 					"$(PROJECT_DIR)/opengl_physics/libs",
+					/usr/local/Cellar/libpng/1.6.37/lib,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "nothingness.opengl-physics";
 				PRODUCT_NAME = "$(TARGET_NAME)";

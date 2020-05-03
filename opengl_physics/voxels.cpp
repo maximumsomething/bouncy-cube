@@ -198,7 +198,7 @@ const GLchar * physOutputs[] = {
 class VoxelRendererImpl : public VoxelRenderer {
 public:
 
-GLuint voxelRenderShader, vectorRenderShader, physicsShader;
+GLuint voxelRenderShader, vectorRenderShader, physicsShader, pickingShader;
 GLuint cubeTexture = loadTexture("rubber.jpg");
 //GLuint cubeTexture = loadTexture("astroturf-2.jpeg");
 
@@ -240,23 +240,27 @@ vectorRenderShader(linkShaders({
 	loadShader("vectors.geom", GL_GEOMETRY_SHADER)
 })),
 physicsShader(linkShaders({
-	loadShader("sim.vert", GL_VERTEX_SHADER)}, [] (GLuint toBeLinked) {
+	loadShader("sim.vert", GL_VERTEX_SHADER)}, true, [] (GLuint toBeLinked) {
 	glTransformFeedbackVaryings(toBeLinked, sizeof(physOutputs) / sizeof(physOutputs[0]), physOutputs, GL_INTERLEAVED_ATTRIBS);
 })) {
+	GLuint voxelVert, voxelGeom;
+	
 	if (DRAW_CUBES) {
-		voxelRenderShader = linkShaders({
-			loadShader("voxels.vert", GL_VERTEX_SHADER),
-			loadShader("voxels.frag", GL_FRAGMENT_SHADER),
-			loadShader("voxels.geom", GL_GEOMETRY_SHADER)
-		});
+		voxelVert = loadShader("voxels.vert", GL_VERTEX_SHADER);
+		voxelGeom = loadShader("voxels.geom", GL_GEOMETRY_SHADER);
 	}
 	else {
-		voxelRenderShader = linkShaders({
-			loadShader("stretchyVoxels.vert", GL_VERTEX_SHADER),
-			loadShader("voxels.frag", GL_FRAGMENT_SHADER),
-			loadShader("stretchyVoxels.geom", GL_GEOMETRY_SHADER)
-		});
+		voxelVert = loadShader("stretchyVoxels.vert", GL_VERTEX_SHADER);
+		voxelGeom = loadShader("stretchyVoxels.geom", GL_GEOMETRY_SHADER);
 	}
+	GLuint voxelFrag = loadShader("voxels.frag", GL_FRAGMENT_SHADER);
+	GLuint pickingFrag = loadShader("picking.frag", GL_FRAGMENT_SHADER);
+	
+	voxelRenderShader = linkShaders({voxelVert, voxelFrag, voxelGeom}, false);
+	glDeleteShader(voxelFrag);
+	pickingShader = linkShaders({voxelVert, pickingFrag, voxelGeom});
+	
+	
 	
 	glGenVertexArrays(3, &voxelRenderVAO);
 	glBindVertexArray(voxelRenderVAO);
@@ -301,6 +305,7 @@ physicsShader(linkShaders({
 	glBufferData(GL_ARRAY_BUFFER, toRender.cubesData.size() * sizeof(VoxelStorage::CubeData), toRender.cubesData.data(), GL_STATIC_DRAW);
 	if (DRAW_CUBES) {
 		setVertDataAttrs(voxelRenderShader);
+		setVertDataAttrs(pickingShader);
 	}
 	else {
 		glBindBuffer(GL_ARRAY_BUFFER, vertNeighborVBO);
@@ -312,7 +317,9 @@ physicsShader(linkShaders({
 		glEnableVertexAttribArray(1);
 
 		initBufferTextures(voxelRenderShader);
+		initBufferTextures(pickingShader);
 		
+		glUseProgram(voxelRenderShader);
 		glUniform1i(glGetUniformLocation(voxelRenderShader, "debugFeedback"), 3);
 	}
 	
@@ -347,13 +354,14 @@ physicsShader(linkShaders({
 	glEnableVertexAttribArray(2);
 	glEnableVertexAttribArray(3);
 	
-	
 	setVertDataAttrs(physicsShader);
 	
 	glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
 	
 	glGenTextures(3, &physBufTex3D);
 	initBufferTextures(physicsShader);
+	
+	initPicking();
 
 	addKeyListener(GLFW_KEY_P, [this](int scancode, int action, int mods) {
 		if (action == GLFW_PRESS) paused = !paused;
@@ -470,7 +478,7 @@ void doPhysics() {
 	glDisable(GL_RASTERIZER_DISCARD);
 }
 
-	glm::mat4 prevTransform{1.0f};
+glm::mat4 prevTransform{1.0f};
 	
 void render(glm::mat4 view, glm::mat4 projection) override {
 	
@@ -486,18 +494,22 @@ void render(glm::mat4 view, glm::mat4 projection) override {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	
-	drawVoxels(totalTransform);
-	if (DRAW_VECTORS) drawVectors(totalTransform);
+	
+	drawVoxels(totalTransform, pickingShader);
+	if (DRAW_VECTORS) {
+		glUseProgram(vectorRenderShader);
+		drawVectors(totalTransform);
+	}
 	
 	//glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	
 	//usleep(500000);
 }
-void drawVoxels(glm::mat4 transform) {
+void drawVoxels(glm::mat4 transform, GLuint shader) {
 
 	glBindVertexArray(voxelRenderVAO);
-	glUseProgram(voxelRenderShader);
-	glUniformMatrix4fv(glGetUniformLocation(voxelRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
+	glUseProgram(shader);
+	glUniformMatrix4fv(glGetUniformLocation(shader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, cubeTexture);
@@ -521,27 +533,64 @@ void drawVoxels(glm::mat4 transform) {
 }
 void drawVectors(glm::mat4 transform) {
 	glBindVertexArray(vectorRenderVAO);
-	glUseProgram(vectorRenderShader);
 	glUniformMatrix4fv(glGetUniformLocation(vectorRenderShader, "transform"), 1, GL_FALSE, glm::value_ptr(transform));
 	
 	glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
 }
 
+	
+GLuint pickerFBO, pickerColorBuf, pickerDepthStencilBuf;
+void initPicking() {
+	glGenFramebuffers(1, &pickerFBO);
+	glGenRenderbuffers(2, &pickerColorBuf);
+	
+	glBindRenderbuffer(GL_RENDERBUFFER, pickerColorBuf);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 100, 100);
+	glBindRenderbuffer(GL_RENDERBUFFER, pickerDepthStencilBuf);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 100, 100);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, pickerFBO);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, pickerColorBuf);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pickerDepthStencilBuf);
+	
+	if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	std::cerr << "Picking framebuffer is not complete!" << std::endl;
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+	
 void getClickPos() {
-	glm::dvec2 unscaled;
-	glfwGetCursorPos(windowData.window, &unscaled.x, &unscaled.y);
-	glm::ivec2 fbSize;
-	glfwGetFramebufferSize(windowData.window, &fbSize.x, &fbSize.y);
-	glm::dvec2 scaledMouse = unscaled * glm::dvec2(fbSize) / glm::dvec2(windowData.width, windowData.height);
+	glm::dvec2 virtualCursor;
+	glfwGetCursorPos(windowData.window, &virtualCursor.x, &virtualCursor.y);
 	
-	float depth;
-	glReadPixels((int) round(scaledMouse.x), (int) round(fbSize.y - scaledMouse.y), 1, 1,  GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+	// COLUMN WISE!
+	glm::mat4 pixelTransform(
+		windowData.width, 0, 0, 0,
+		0, windowData.height, 0, 0,
+		0, 0, 1, 0,
+		windowData.width - virtualCursor.x * 2, virtualCursor.y * 2 - windowData.height, 0, 1
+	);
+	int oldViewport[4];
+	glGetIntegerv(GL_VIEWPORT, oldViewport);
+	glBindFramebuffer(GL_FRAMEBUFFER, pickerFBO);
+	glViewport(0, 0, 100, 100);
 	
-	glm::vec3 mouseWorld = glm::unProject(glm::vec3(scaledMouse.x, scaledMouse.y, depth), glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, fbSize.x, fbSize.y));
-	std::cout << "Click at screen x:" << unscaled.x << " y:" << unscaled.y << " depth:" << depth << std::endl;
-	std::cout << "Click at world x:" << mouseWorld.x << " y:" << mouseWorld.y << " z:" << mouseWorld.z << std::endl;
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	drawVoxels(pixelTransform * prevTransform, pickingShader);
 	
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	//std::vector<uint8_t> data(40000);
+	//glReadPixels(0, 0, 100, 100, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+	//dumpImage(data.data(), 100, 100);
 	
+	uint8_t pickedPixel[4];
+	glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pickedPixel);
+	
+	std::cout << "clicked r:" << (int) pickedPixel[0] << " g:" << (int) pickedPixel[1] << " b:" << (int) pickedPixel[2] << " a:" << (int) pickedPixel[3] << std::endl;
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
 }
 
 void mouseDragEnd() {

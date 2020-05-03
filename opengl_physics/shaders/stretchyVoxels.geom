@@ -13,6 +13,7 @@ void doVertex(int i, vec2 coord) {
 	texCoord = coord;
 	vertColor = vec4(1, 0, 0, min(feedback[i] * 0.25, 0.5));
 	gl_Position = gl_in[i].gl_Position;
+	gl_PrimitiveID = gl_PrimitiveIDIn;
 	EmitVertex();
 }
 

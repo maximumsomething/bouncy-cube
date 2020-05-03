@@ -306,6 +306,7 @@ void APIENTRY myDebugOutput(GLenum source,
 #endif
 
 int main(int argc, char** argv) {
+	srand(time(0));
 	
 	glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
