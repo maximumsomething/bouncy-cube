@@ -269,6 +269,7 @@ bool paused = true, doingStep = false;
 
 struct ClickData {
 	int cubeSel = -1;
+	int cubeFacesStart = -1, cubeFacesCount = 0;
 	float screenDepth = 1;
 	glm::vec3 worldOffset = glm::zero<glm::vec3>();
 } clickData;
@@ -526,6 +527,8 @@ void render(glm::mat4 view, glm::mat4 projection) override {
 	
 	doPhysics();
 	
+	if (clickData.cubeSel != -1) doDrag();
+	
 	glm::mat4 model(1.0f);
 	model = glm::translate(model, glm::vec3(-RADIUS, -RADIUS, -RADIUS*2));
 	
@@ -640,7 +643,7 @@ void getClickPos() {
 	pickedPixel[1] * 0x100 +
 	pickedPixel[2] * 0x10000;
 	
-	if (faceID == 0xFFFFFF) return;
+	if (faceID >= 0xFFFFFF) return;
 	
 	std::cout << "clicked face " << faceID << std::endl;
 	
@@ -651,13 +654,21 @@ void getClickPos() {
 	glm::vec3 pickedCubePos;
 	glGetBufferSubData(GL_ARRAY_BUFFER, clickData.cubeSel * sizeof(PhysData3D), sizeof(glm::vec3), &pickedCubePos);
 	
-	// Highlight selected face
+	// Highlight selected cube
+	for (int queryFace = faceID + 1; toRender.faceCubes[queryFace] == clickData.cubeSel; ++queryFace) {
+		++clickData.cubeFacesCount;
+	}
+	for (int queryFace = faceID; toRender.faceCubes[queryFace] == clickData.cubeSel; --queryFace) {
+		++clickData.cubeFacesCount;
+		clickData.cubeFacesStart = queryFace;
+	}
+	
 	glBindBuffer(GL_ARRAY_BUFFER, faceHighlight.buf);
-	uint8_t fullHighlightVal = 255;
-	glBufferSubData(GL_ARRAY_BUFFER, faceID, 1, &fullHighlightVal);
+	uint8_t fullHighlights[6] = { 255, 255, 255, 255, 255, 255 };
+	glBufferSubData(GL_ARRAY_BUFFER, clickData.cubeFacesStart, clickData.cubeFacesCount, &fullHighlights);
 	
 	std::cout << "cube pos: x:" << pickedCubePos.x << " y:" << pickedCubePos.y << " z:" << pickedCubePos.z << std::endl;
-	
+	/*
 	glm::vec4 thing = glm::vec4(pickedCubePos, 1.0);
 	
 	glm::vec4 projectedCubePos = prevTransform * glm::vec4(pickedCubePos, 1.0);
@@ -666,12 +677,22 @@ void getClickPos() {
 	
 	clickData.screenDepth = normProjectedCubePos.z;
 	
+	glm::vec3 cubeScreenPos((normProjectedCubePos.x + 1) / 2 * windowData.width,
+							(normProjectedCubePos.y + 1) / 2 * windowData.height,
+							normProjectedCubePos.z);
+	
+	glm::vec3 shouldBeSameAsCubeScreenPos = glm::project(pickedCubePos, glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
+	
+	glm::vec3 shouldBeTheSameAsCubePos = glm::unProject(cubeScreenPos, glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
+	assert(glm::length(shouldBeTheSameAsCubePos - pickedCubePos) < 0.01);*/
+	
+	glm::vec3 projCube = glm::project(pickedCubePos, glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
+	clickData.screenDepth = projCube.z;
+	
 	glm::vec3 mouseWorld = glm::unProject(glm::vec3(virtualCursor.x, windowData.height - virtualCursor.y, clickData.screenDepth), glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
 	
-	glm::vec3 shouldBeTheSameAsCubePos = glm::unProject(glm::vec3((normProjectedCubePos.x + 1) / 2 * windowData.width, (normProjectedCubePos.y + 1) / 2 * windowData.height, normProjectedCubePos.z), glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
-	//assert(glm::length(shouldBeTheSameAsCubePos - pickedCubePos) < 0.01);
 	
-	clickData.worldOffset = mouseWorld - pickedCubePos;
+	clickData.worldOffset = pickedCubePos - mouseWorld;
 }
 
 
@@ -680,11 +701,26 @@ void mouseDown() {
 }
 
 void doDrag() {
+	glm::dvec2 cursorPos;
+	glfwGetCursorPos(windowData.window, &cursorPos.x, &cursorPos.y);
 	
+	glm::vec3 mouseWorld = glm::unProject(glm::vec3(cursorPos.x, windowData.height - cursorPos.y, clickData.screenDepth), glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
+	
+	glm::vec3 newCubePos = mouseWorld + clickData.worldOffset;
+	
+	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D.buf);
+	glBufferSubData(GL_ARRAY_BUFFER, clickData.cubeSel * sizeof(PhysData3D), sizeof(glm::vec3), &newCubePos);
 }
 	
 void mouseUp() {
-	clickData = ClickData();
+	if (clickData.cubeSel != -1) {
+		// Unhighlight
+		glBindBuffer(GL_ARRAY_BUFFER, faceHighlight.buf);
+		uint8_t noHighlights[6] = { 0, 0, 0, 0, 0, 0 };
+		glBufferSubData(GL_ARRAY_BUFFER, clickData.cubeFacesStart, clickData.cubeFacesCount, &noHighlights);
+		
+		clickData = ClickData();
+	}
 }
 	
 };

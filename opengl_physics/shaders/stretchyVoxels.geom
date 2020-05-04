@@ -24,7 +24,7 @@ void doVertex(int i, vec2 coord) {
 }
 
 void main() {
-	highlight = texelFetch(faceHighlight, gl_PrimitiveIDIn).r * 0.5;
+	highlight = texelFetch(faceHighlight, gl_PrimitiveIDIn).r * 0.3;
 	doVertex(0, vec2(0, 0));
 	doVertex(1, vec2(1, 0));
 	doVertex(3, vec2(0, 1));
