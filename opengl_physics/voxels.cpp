@@ -202,6 +202,37 @@ const GLchar * physOutputs[] = {
 	"gl_NextBuffer", "outTurn",
 	"gl_NextBuffer", "debugFeedback" };
 
+
+
+struct BufferWithTexture {
+	GLenum format;
+	int texIdx;
+	
+	const char* texName;
+	GLuint buf, tex;
+	
+	BufferWithTexture(GLenum format, int texIdx, const char* texName) : format(format), texIdx(texIdx), texName(texName) {
+		glGenBuffers(1, &buf);
+		glGenTextures(1, &tex);
+	}
+	void bindTex() {
+		glActiveTexture(GL_TEXTURE0 + texIdx);
+		glBindTexture(GL_TEXTURE_BUFFER, tex);
+		glTexBuffer(GL_TEXTURE_BUFFER, format, buf);
+	}
+	
+	void addToShader(GLuint shader) {
+		GLuint loc = glGetUniformLocation(shader, texName);
+		if (loc == -1) {
+			std::cerr << "Cannot locate texture in shader!" << std::endl;
+			return;
+		}
+		glUseProgram(shader);
+		glUniform1i(loc, texIdx);
+	}
+};
+
+
 // Renders everything
 class VoxelRendererImpl : public VoxelRenderer {
 public:
@@ -213,7 +244,7 @@ GLuint cubeTexture = loadTexture("rubber.jpg");
 VoxelStorage toRender{genSphere(RADIUS)};
 
 // PhysVBO is read and written by the physics code. DebugFeedbackVBO is written to but not read by the physics code, and DataVBO is read but not written to by the physics code. All three are read by the drawing code.
-	GLuint voxelRenderVAO, vectorRenderVAO, physVAO, debugFeedbackVBO, dataVBO, vertNeighborVBO, faceHighlightVBO, EBO, physBufTex3D, physBufTex4D, feedbackBufTex, highlightBufTex;
+	GLuint voxelRenderVAO, vectorRenderVAO, physVAO, dataVBO, vertNeighborVBO, EBO;
 
 struct PhysData3D {
 	glm::vec3 pos = glm::zero<glm::vec3>();
@@ -226,14 +257,11 @@ struct PhysData4D {
 };
 
 struct PhysBuffers {
-	GLuint data3D;
-	GLuint data4D;
-	
-	PhysBuffers() {
-		glGenBuffers(2, &data3D);
-	}
+	BufferWithTexture data3D{GL_RGB32F, 0, "allVerts3D"}, data4D{GL_RGBA32F, 1, "allVerts4D"};
 };
 PhysBuffers physBuf1, physBuf2;
+	BufferWithTexture debugFeedback{GL_R32F, 3, "debugFeedback"},
+	faceHighlight{GL_R8, 4, "faceHighlight"};
 
 size_t physVBO3DSize, physVBO4DSize, feedbackVBOSize;
 
@@ -293,18 +321,18 @@ physicsShader(linkShaders({
 	physVBO4DSize = toRender.cubesPos.size() * sizeof(PhysData4D);
 	feedbackVBOSize = toRender.cubesPos.size() * sizeof(float);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
+	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D.buf);
 	glBufferData(GL_ARRAY_BUFFER, physVBO3DSize, initPhysData.data(), GL_STREAM_COPY);
-	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data4D);
+	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data4D.buf);
 	glBufferData(GL_ARRAY_BUFFER, physVBO4DSize, initTurn.data(), GL_STREAM_COPY);
 	
 	if (DRAW_CUBES) setPosTurnDrawAttrs();
 	
 	// Generate the non-physics buffers
-	glGenBuffers(5, &debugFeedbackVBO);
+	glGenBuffers(3, &dataVBO);
 
 
-	glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, debugFeedback.buf);
 	float* feedbackClearData = (float *) calloc(1, feedbackVBOSize);
 	glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, feedbackClearData, GL_STREAM_COPY);
 	free(feedbackClearData);
@@ -329,8 +357,8 @@ physicsShader(linkShaders({
 		glVertexAttribIPointer(1, 4, GL_INT, sizeof(int32_t) * 8, (void *) (sizeof(int32_t) * 4));
 		glEnableVertexAttribArray(1);
 
-		initBufferTextures(voxelRenderShader);
-		initBufferTextures(pickingShader);
+		initPhysBufferTextures(voxelRenderShader);
+		initPhysBufferTextures(pickingShader);
 		
 		glUseProgram(voxelRenderShader);
 		glUniform1i(glGetUniformLocation(voxelRenderShader, "debugFeedback"), 3);
@@ -338,10 +366,9 @@ physicsShader(linkShaders({
 	
 	// CPU-set highlight color: one byte per face, might change
 	void* highlightClearData = calloc(1, toRender.faceCubes.size());
-	glBindBuffer(GL_ARRAY_BUFFER, faceHighlightVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, faceHighlight.buf);
 	glBufferData(GL_ARRAY_BUFFER, toRender.faceCubes.size(), highlightClearData, GL_DYNAMIC_DRAW);
 	free(highlightClearData);
-	
 	
 	
 	glUseProgram(voxelRenderShader);
@@ -360,7 +387,7 @@ physicsShader(linkShaders({
 		// Drawing debug vectors
 		glBindVertexArray(vectorRenderVAO);
 		setPosTurnDrawAttrs();
-		glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
+		glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D.buf);
 		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, vel));
 		glEnableVertexAttribArray(2);
 		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, angVel));
@@ -376,11 +403,9 @@ physicsShader(linkShaders({
 	glEnableVertexAttribArray(3);
 	
 	setVertDataAttrs(physicsShader);
+	initPhysBufferTextures(physicsShader);
 	
 	glUniform1f(glGetUniformLocation(physicsShader, "timeDelta"), 1.0/60.0/PHYS_STEPS_PER_FRAME);
-	
-	glGenTextures(3, &physBufTex3D);
-	initBufferTextures(physicsShader);
 	
 	initPicking();
 
@@ -402,26 +427,17 @@ physicsShader(linkShaders({
 	});
 }
 	
-void initBufferTextures(GLuint shader) {
-	glUseProgram(shader);
-	glUniform1i(glGetUniformLocation(shader, "allVerts3D"), 0);
-	glUniform1i(glGetUniformLocation(shader, "allVerts4D"), 1);
-}
-void bindBufferTextures(PhysBuffers VBOs) {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_BUFFER, physBufTex3D);
-	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, VBOs.data3D);
-	
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_BUFFER, physBufTex4D);
-	glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, VBOs.data4D);
+void initPhysBufferTextures(GLuint shader) {
+	// Only needs to be done for 1 because the IDs are equal
+	physBuf1.data3D.addToShader(shader);
+	physBuf1.data4D.addToShader(shader);
 }
 
 void setPosTurnDrawAttrs() {
-	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
+	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D.buf);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, pos));
 	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data4D);
+	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data4D.buf);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(PhysData4D), (void*) offsetof(PhysData4D, turn));
 	glEnableVertexAttribArray(1);
 }
@@ -442,13 +458,13 @@ void setVertDataAttrs(GLuint shader) {
 void physicsStep(PhysBuffers inVBOs, PhysBuffers outVBOs) {
 	
 	// Clear the out buffer
-	glBindBuffer(GL_ARRAY_BUFFER, outVBOs.data3D);
+	glBindBuffer(GL_ARRAY_BUFFER, outVBOs.data3D.buf);
 	glBufferData(GL_ARRAY_BUFFER, physVBO3DSize, nullptr, GL_STREAM_COPY);
-	glBindBuffer(GL_ARRAY_BUFFER, outVBOs.data4D);
+	glBindBuffer(GL_ARRAY_BUFFER, outVBOs.data4D.buf);
 	glBufferData(GL_ARRAY_BUFFER, physVBO3DSize, nullptr, GL_STREAM_COPY);
 
 	
-	glBindBuffer(GL_ARRAY_BUFFER, inVBOs.data3D);
+	glBindBuffer(GL_ARRAY_BUFFER, inVBOs.data3D.buf);
 	// inPos
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, pos));
 	// inVel
@@ -456,15 +472,16 @@ void physicsStep(PhysBuffers inVBOs, PhysBuffers outVBOs) {
 	// inAngVel
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(PhysData3D), (void*) offsetof(PhysData3D, angVel));
 	// inTurn
-	glBindBuffer(GL_ARRAY_BUFFER, inVBOs.data4D);
+	glBindBuffer(GL_ARRAY_BUFFER, inVBOs.data4D.buf);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(PhysData4D), (void*) offsetof(PhysData4D, turn));
 	
-	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outVBOs.data3D);
-	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, outVBOs.data4D);
-	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, debugFeedbackVBO);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, outVBOs.data3D.buf);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 1, outVBOs.data4D.buf);
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 2, debugFeedback.buf);
 	
 	
-	bindBufferTextures(inVBOs);
+	inVBOs.data3D.bindTex();
+	inVBOs.data4D.bindTex();
 	
 	glBeginTransformFeedback(GL_POINTS);
 	glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
@@ -544,10 +561,9 @@ void drawVoxels(glm::mat4 transform, GLuint shader) {
 		glDrawArrays(GL_POINTS, 0, toRender.cubesPos.size());
 	}
 	else {
-		bindBufferTextures(physBuf1);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_BUFFER, feedbackBufTex);
-		glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, debugFeedbackVBO);
+		physBuf1.data3D.bindTex();
+		physBuf1.data4D.bindTex();
+		debugFeedback.bindTex();
 		
 		glDrawElements(GL_LINES_ADJACENCY, toRender.faceIndices.size(), GL_UNSIGNED_INT, nullptr);
 	}
@@ -622,7 +638,7 @@ void getClickPos() {
 	clickData.cubeSel = toRender.faceCubes[faceID];
 	std::cout << "clicked cube " << clickData.cubeSel << std::endl;
 	
-	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
+	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D.buf);
 	glm::vec3 pickedCubePos;
 	glGetBufferSubData(GL_ARRAY_BUFFER, clickData.cubeSel * sizeof(PhysData3D), sizeof(glm::vec3), &pickedCubePos);
 	
