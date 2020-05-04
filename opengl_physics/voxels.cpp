@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cmath>
 #include <unistd.h>
+#define GLM_HAS_ONLY_XYZW
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -40,8 +41,12 @@ public:
 	std::vector<glm::vec3> cubesPos;
 	std::vector<CubeData> cubesData;
 	//std::vector<uint32_t> edgeIndices;
+	// List of vertices on the surface, each of which has up to 8 neighboring cubes
 	std::vector<VertNeighbors> vertsNeighbors;
+	// Quads of vertices that make up the faces
 	std::vector<uint32_t> faceIndices;
+	// Has an entry per face, saying which cube that face belongs to
+	std::vector<uint32_t> faceCubes;
 	
 	VoxelStorage(arrayND<bool, 3> storage) : storage(storage) {
 		
@@ -144,9 +149,12 @@ private:
 					faceIndices.push_back(cornerIndexMap[cornerPos]);
 					cornerPos[(j + 1) % 3] -= 1;
 					faceIndices.push_back(cornerIndexMap[cornerPos]);
+					
+					faceCubes.push_back(i);
 				}
 			}
 		}
+		assert(faceCubes.size() * 4 == faceIndices.size());
 	}
 	
 	
@@ -205,7 +213,7 @@ GLuint cubeTexture = loadTexture("rubber.jpg");
 VoxelStorage toRender{genSphere(RADIUS)};
 
 // PhysVBO is read and written by the physics code. DebugFeedbackVBO is written to but not read by the physics code, and DataVBO is read but not written to by the physics code. All three are read by the drawing code.
-	GLuint voxelRenderVAO, vectorRenderVAO, physVAO, debugFeedbackVBO, dataVBO, vertNeighborVBO, EBO, physBufTex3D, physBufTex4D, feedbackBufTex;
+	GLuint voxelRenderVAO, vectorRenderVAO, physVAO, debugFeedbackVBO, dataVBO, vertNeighborVBO, faceHighlightVBO, EBO, physBufTex3D, physBufTex4D, feedbackBufTex, highlightBufTex;
 
 struct PhysData3D {
 	glm::vec3 pos = glm::zero<glm::vec3>();
@@ -231,7 +239,11 @@ size_t physVBO3DSize, physVBO4DSize, feedbackVBOSize;
 
 bool paused = true, doingStep = false;
 
-
+struct ClickData {
+	int cubeSel = -1;
+	float screenDepth = 1;
+	glm::vec3 worldOffset = glm::zero<glm::vec3>();
+} clickData;
 
 VoxelRendererImpl() :
 vectorRenderShader(linkShaders({
@@ -243,23 +255,24 @@ physicsShader(linkShaders({
 	loadShader("sim.vert", GL_VERTEX_SHADER)}, true, [] (GLuint toBeLinked) {
 	glTransformFeedbackVaryings(toBeLinked, sizeof(physOutputs) / sizeof(physOutputs[0]), physOutputs, GL_INTERLEAVED_ATTRIBS);
 })) {
-	GLuint voxelVert, voxelGeom;
+	GLuint voxelVert, voxelGeom, pickingGeom;
 	
 	if (DRAW_CUBES) {
 		voxelVert = loadShader("voxels.vert", GL_VERTEX_SHADER);
 		voxelGeom = loadShader("voxels.geom", GL_GEOMETRY_SHADER);
+		pickingGeom = voxelGeom;
 	}
 	else {
 		voxelVert = loadShader("stretchyVoxels.vert", GL_VERTEX_SHADER);
 		voxelGeom = loadShader("stretchyVoxels.geom", GL_GEOMETRY_SHADER);
+		pickingGeom = loadShader("quadExpansion.geom", GL_GEOMETRY_SHADER);
 	}
 	GLuint voxelFrag = loadShader("voxels.frag", GL_FRAGMENT_SHADER);
 	GLuint pickingFrag = loadShader("picking.frag", GL_FRAGMENT_SHADER);
 	
 	voxelRenderShader = linkShaders({voxelVert, voxelFrag, voxelGeom}, false);
 	glDeleteShader(voxelFrag);
-	pickingShader = linkShaders({voxelVert, pickingFrag, voxelGeom});
-	
+	pickingShader = linkShaders({voxelVert, pickingFrag, pickingGeom});
 	
 	
 	glGenVertexArrays(3, &voxelRenderVAO);
@@ -288,13 +301,13 @@ physicsShader(linkShaders({
 	if (DRAW_CUBES) setPosTurnDrawAttrs();
 	
 	// Generate the non-physics buffers
-	glGenBuffers(4, &debugFeedbackVBO);
+	glGenBuffers(5, &debugFeedbackVBO);
 
 
 	glBindBuffer(GL_ARRAY_BUFFER, debugFeedbackVBO);
-	float* clearData = (float *) calloc(1, feedbackVBOSize);
-	glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, clearData, GL_STREAM_COPY);
-	free(clearData);
+	float* feedbackClearData = (float *) calloc(1, feedbackVBOSize);
+	glBufferData(GL_ARRAY_BUFFER, feedbackVBOSize, feedbackClearData, GL_STREAM_COPY);
+	free(feedbackClearData);
 	if (DRAW_CUBES) {
 		// draw debug feedback
 		glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
@@ -322,6 +335,14 @@ physicsShader(linkShaders({
 		glUseProgram(voxelRenderShader);
 		glUniform1i(glGetUniformLocation(voxelRenderShader, "debugFeedback"), 3);
 	}
+	
+	// CPU-set highlight color: one byte per face, might change
+	void* highlightClearData = calloc(1, toRender.faceCubes.size());
+	glBindBuffer(GL_ARRAY_BUFFER, faceHighlightVBO);
+	glBufferData(GL_ARRAY_BUFFER, toRender.faceCubes.size(), highlightClearData, GL_DYNAMIC_DRAW);
+	free(highlightClearData);
+	
+	
 	
 	glUseProgram(voxelRenderShader);
 	glUniform1i(glGetUniformLocation(voxelRenderShader, "cubeTexture"), 2);
@@ -375,8 +396,8 @@ physicsShader(linkShaders({
 	
 	addClickListener([this](int button, int action, int mods) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
-			if (action == GLFW_PRESS) getClickPos();
-			else if (action == GLFW_RELEASE) mouseDragEnd();
+			if (action == GLFW_PRESS) mouseDown();
+			else if (action == GLFW_RELEASE) mouseUp();
 		}
 	});
 }
@@ -495,7 +516,7 @@ void render(glm::mat4 view, glm::mat4 projection) override {
 	glEnable(GL_DEPTH_TEST);
 	
 	
-	drawVoxels(totalTransform, pickingShader);
+	drawVoxels(totalTransform, voxelRenderShader);
 	if (DRAW_VECTORS) {
 		glUseProgram(vectorRenderShader);
 		drawVectors(totalTransform);
@@ -558,7 +579,7 @@ void initPicking() {
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-	
+
 void getClickPos() {
 	glm::dvec2 virtualCursor;
 	glfwGetCursorPos(windowData.window, &virtualCursor.x, &virtualCursor.y);
@@ -575,7 +596,7 @@ void getClickPos() {
 	glBindFramebuffer(GL_FRAMEBUFFER, pickerFBO);
 	glViewport(0, 0, 100, 100);
 	
-	glClearColor(0, 0, 0, 1);
+	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	drawVoxels(pixelTransform * prevTransform, pickingShader);
 	
@@ -587,14 +608,54 @@ void getClickPos() {
 	uint8_t pickedPixel[4];
 	glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pickedPixel);
 	
-	std::cout << "clicked r:" << (int) pickedPixel[0] << " g:" << (int) pickedPixel[1] << " b:" << (int) pickedPixel[2] << " a:" << (int) pickedPixel[3] << std::endl;
-	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
+	
+	std::cout << "clicked r:" << (int) pickedPixel[0] << " g:" << (int) pickedPixel[1] << " b:" << (int) pickedPixel[2] << " a:" << (int) pickedPixel[3] << std::endl;
+	
+	int faceID = pickedPixel[0] +
+	pickedPixel[1] * 0xFF +
+	pickedPixel[2] * 0xFFFF;
+	
+	if (faceID == 0xFFFFFF) return;
+	
+	clickData.cubeSel = toRender.faceCubes[faceID];
+	std::cout << "clicked cube " << clickData.cubeSel << std::endl;
+	
+	glBindBuffer(GL_ARRAY_BUFFER, physBuf1.data3D);
+	glm::vec3 pickedCubePos;
+	glGetBufferSubData(GL_ARRAY_BUFFER, clickData.cubeSel * sizeof(PhysData3D), sizeof(glm::vec3), &pickedCubePos);
+	
+	
+	std::cout << "cube pos: x:" << pickedCubePos.x << " y:" << pickedCubePos.y << " z:" << pickedCubePos.z << std::endl;
+	
+	glm::vec4 thing = glm::vec4(pickedCubePos, 1.0);
+	
+	glm::vec4 projectedCubePos = prevTransform * glm::vec4(pickedCubePos, 1.0);
+	glm::vec3 normProjectedCubePos = glm::vec3(projectedCubePos) / projectedCubePos.w;
+	
+	
+	clickData.screenDepth = normProjectedCubePos.z;
+	
+	glm::vec3 mouseWorld = glm::unProject(glm::vec3(virtualCursor.x, windowData.height - virtualCursor.y, clickData.screenDepth), glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
+	
+	glm::vec3 shouldBeTheSameAsCubePos = glm::unProject(glm::vec3((normProjectedCubePos.x + 1) / 2 * windowData.width, (normProjectedCubePos.y + 1) / 2 * windowData.height, normProjectedCubePos.z), glm::mat4(1.0f), prevTransform, glm::ivec4(0, 0, windowData.width, windowData.height));
+	//assert(glm::length(shouldBeTheSameAsCubePos - pickedCubePos) < 0.01);
+	
+	clickData.worldOffset = mouseWorld - pickedCubePos;
 }
 
-void mouseDragEnd() {
+
+void mouseDown() {
+	getClickPos();
+}
+
+void doDrag() {
 	
+}
+	
+void mouseUp() {
+	clickData = ClickData();
 }
 	
 };
