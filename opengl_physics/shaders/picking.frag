@@ -8,7 +8,8 @@ void main() {
 	int g = (gl_PrimitiveID & 0x0000FF00) >>  8;
 	int b = (gl_PrimitiveID & 0x00FF0000) >> 16;
 	
-	/*int i = gl_PrimitiveID;
+	/*
+	int i = gl_PrimitiveID;
 	int r = (((i >> 0) & 1) << 7) | (((i >> 3) & 1) << 6) | (((i >> 6) & 1) << 5)
 	| (((i >> 9) & 1) << 4);
 	int g = (((i >> 1) & 1) << 7) | (((i >> 4) & 1) << 6) | (((i >> 7) & 1) << 5)

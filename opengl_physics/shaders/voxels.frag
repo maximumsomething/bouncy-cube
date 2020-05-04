@@ -18,6 +18,7 @@ void main() {
 	//FragColor = vec4(vertColor, 1);
 	
 	//FragColor = vec4(texture(cubeTexture, texCoord).rgb, 1);
-	FragColor = vec4(mix(texture(cubeTexture, texCoord).rgb, vertColor.rgb, vertColor.a), 1);
+	//FragColor = vec4(mix(texture(cubeTexture, texCoord).rgb, vertColor.rgb, vertColor.a), 1);
+	FragColor = vec4(texture(cubeTexture, texCoord).rgb * (1 - vertColor.a) + vertColor.rgb, 1);
 	//FragColor = vec4(vec3(linearizeDepth(gl_FragCoord.z) / 100), 1.0);
 }

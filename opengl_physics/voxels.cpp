@@ -360,15 +360,19 @@ physicsShader(linkShaders({
 		initPhysBufferTextures(voxelRenderShader);
 		initPhysBufferTextures(pickingShader);
 		
-		glUseProgram(voxelRenderShader);
-		glUniform1i(glGetUniformLocation(voxelRenderShader, "debugFeedback"), 3);
+		debugFeedback.addToShader(voxelRenderShader);
+		faceHighlight.addToShader(voxelRenderShader);
 	}
 	
 	// CPU-set highlight color: one byte per face, might change
-	void* highlightClearData = calloc(1, toRender.faceCubes.size());
+	uint8_t* highlightClearData = (uint8_t*) calloc(1, toRender.faceCubes.size());
+	/*for (int i = 0; i < toRender.faceCubes.size(); ++i) {
+		highlightClearData[i] = 255;
+	}*/
 	glBindBuffer(GL_ARRAY_BUFFER, faceHighlight.buf);
 	glBufferData(GL_ARRAY_BUFFER, toRender.faceCubes.size(), highlightClearData, GL_DYNAMIC_DRAW);
 	free(highlightClearData);
+	
 	
 	
 	glUseProgram(voxelRenderShader);
@@ -564,6 +568,7 @@ void drawVoxels(glm::mat4 transform, GLuint shader) {
 		physBuf1.data3D.bindTex();
 		physBuf1.data4D.bindTex();
 		debugFeedback.bindTex();
+		faceHighlight.bindTex();
 		
 		glDrawElements(GL_LINES_ADJACENCY, toRender.faceIndices.size(), GL_UNSIGNED_INT, nullptr);
 	}
@@ -582,9 +587,9 @@ void initPicking() {
 	glGenRenderbuffers(2, &pickerColorBuf);
 	
 	glBindRenderbuffer(GL_RENDERBUFFER, pickerColorBuf);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 100, 100);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1, 1);
 	glBindRenderbuffer(GL_RENDERBUFFER, pickerDepthStencilBuf);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 100, 100);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 1, 1);
 	
 	glBindFramebuffer(GL_FRAMEBUFFER, pickerFBO);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, pickerColorBuf);
@@ -610,7 +615,9 @@ void getClickPos() {
 	int oldViewport[4];
 	glGetIntegerv(GL_VIEWPORT, oldViewport);
 	glBindFramebuffer(GL_FRAMEBUFFER, pickerFBO);
-	glViewport(0, 0, 100, 100);
+	glViewport(0, 0, 1, 1);
+	
+	glDisable(GL_MULTISAMPLE);
 	
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -630,10 +637,12 @@ void getClickPos() {
 	std::cout << "clicked r:" << (int) pickedPixel[0] << " g:" << (int) pickedPixel[1] << " b:" << (int) pickedPixel[2] << " a:" << (int) pickedPixel[3] << std::endl;
 	
 	int faceID = pickedPixel[0] +
-	pickedPixel[1] * 0xFF +
-	pickedPixel[2] * 0xFFFF;
+	pickedPixel[1] * 0x100 +
+	pickedPixel[2] * 0x10000;
 	
 	if (faceID == 0xFFFFFF) return;
+	
+	std::cout << "clicked face " << faceID << std::endl;
 	
 	clickData.cubeSel = toRender.faceCubes[faceID];
 	std::cout << "clicked cube " << clickData.cubeSel << std::endl;
@@ -642,6 +651,10 @@ void getClickPos() {
 	glm::vec3 pickedCubePos;
 	glGetBufferSubData(GL_ARRAY_BUFFER, clickData.cubeSel * sizeof(PhysData3D), sizeof(glm::vec3), &pickedCubePos);
 	
+	// Highlight selected face
+	glBindBuffer(GL_ARRAY_BUFFER, faceHighlight.buf);
+	uint8_t fullHighlightVal = 255;
+	glBufferSubData(GL_ARRAY_BUFFER, faceID, 1, &fullHighlightVal);
 	
 	std::cout << "cube pos: x:" << pickedCubePos.x << " y:" << pickedCubePos.y << " z:" << pickedCubePos.z << std::endl;
 	
